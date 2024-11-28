@@ -1,0 +1,18 @@
+{
+  "name": "portfolio",
+  "scripts": {
+    "dev": "wrangler dev src/main.ts --live-reload",
+    "deploy": "wrangler deploy --minify src/main.ts",
+    "tailwind": "tailwindcss -i ./tailwind.css -o assets/static/tailwind.css --watch",
+    "routes": "hono-router src/routes src/router.ts"
+  },
+  "dependencies": {
+    "hono": "^4.6.12",
+    "hono-router": "^1.0.7",
+    "tailwindcss": "^3.4.15"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241112.0",
+    "wrangler": "^3.88.0"
+  }
+}
