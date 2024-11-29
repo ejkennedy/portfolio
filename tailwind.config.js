@@ -2,8 +2,13 @@
 module.exports = {
   content: ["./src/**/*.tsx", "./src/**/*.ts"],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'background': '#0A192F',
+        'turquoise': '#64FFDB',
+      },
+    },
   },
-  plugins: [],
+  plugins: [require('daisyui')],
 }
 
