@@ -4,53 +4,31 @@ export const RootHtml = jsxRenderer(({ children }) => {
   return (
     <html lang="en">
       <head>
-        <meta name="description" content="EEFAN"/>
+        <meta charset="UTF-8" />
+        <meta name="description" content="Ethan Kennedy — ML Engineer & Software Developer" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Portfolio</title>
-        <script src="/static/js/htmx.2.0.1.js"></script>
+        <title>Ethan Kennedy</title>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
         <link rel="stylesheet" href="/static/tailwind.css" />
+
+        <script type="importmap" dangerouslySetInnerHTML={{ __html: `{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}` }} />
       </head>
-      <body class="bg-background">
+      <body class="bg-bg text-primary font-sans antialiased">
         <div hx-boost="true">
-        
-        
-          <nav>
-            <div class="flex flex-row m-5 text-pretty">
-              <div class="mr-[30%]">
-                <a href="/" alt="home" class=""><img></img></a>
-              </div>
-              <div class="flex flex-row justify-stretch">
-                <div>
-                  <a href="/about" class="flex flex-row text-turquoise mr-5">
-                  01.<div class="text-blue-300">About</div>
-                  </a>
-                </div>
-                <div>
-                  <a href="/projects" class="flex flex-row text-turquoise mr-5">02.
-                    <div class="text-blue-300">Projects</div>
-                  </a>
-                </div>
-                <div>
-                  <a href="/experience" class="flex flex-row text-turquoise mr-5">03.
-                    <div class="text-blue-300">Experience</div>
-                  </a>
-                </div>
-                <div>
-                  <a href="/contact" class="flex flex-row text-turquoise mr-5">04.
-                    <div class="text-blue-300">Contact</div>
-                  </a>
-                </div>
-                <div>
-                  <a href="/cv">
-                    <div class="text-turquoise border border-spacing-9 border-turquoise p-2">My CV</div>
-                  </a>
-                </div>
-              </div>
-            </div>
-            <span></span>
-          </nav>
           {children}
         </div>
+        <script src="/static/js/htmx.2.0.1.js" defer />
+        <script type="module" src="/static/js/hero-animation.js" defer />
+        <script type="module" src="/static/js/scroll-animations.js" defer />
       </body>
     </html>
   )

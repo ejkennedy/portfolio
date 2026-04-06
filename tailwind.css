@@ -1,3 +1,66 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: #0B0D10;
+    color: #F5F7FA;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-full bg-accent-blue text-bg font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow-blue;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 text-primary font-medium text-sm transition-all duration-200 hover:border-white/50 hover:bg-white/5;
+  }
+
+  .card {
+    @apply bg-surface border border-white/[0.07] rounded-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:shadow-card-hover;
+  }
+
+  .section-eyebrow {
+    @apply text-eyebrow font-semibold uppercase tracking-[0.12em] text-accent-blue;
+  }
+
+  .section-heading {
+    @apply text-section font-bold text-primary;
+  }
+
+  .tag-chip {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-[11px] font-medium border border-white/10 text-secondary bg-white/5;
+  }
+}
+
+@layer utilities {
+  .grid-bg {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.025'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #4CC9F0, #7C3AED);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
