@@ -21,28 +21,23 @@ export const Nav = () => (
           z-index: 49;
           backdrop-filter: blur(16px);
         }
-        #mobile-drawer.open {
-          display: flex;
-        }
+        #mobile-drawer.open { display: flex; }
       `}} />
 
-      {/* Logo */}
+      {/* Logo — full name */}
       <a href="/" class="text-sm font-bold text-primary tracking-tight hover:text-accent-blue transition-colors">
-        EK
+        Ethan Kennedy
       </a>
 
       {/* Desktop nav */}
       <div class="hidden md:flex items-center gap-8">
         {[
-          { label: 'Work', href: '#work' },
-          { label: 'About', href: '#about' },
+          { label: 'Work',       href: '#work' },
+          { label: 'About',      href: '#about' },
           { label: 'Experience', href: '#experience' },
-          { label: 'Contact', href: '#contact' },
+          { label: 'Contact',    href: '#contact' },
         ].map(({ label, href }) => (
-          <a
-            href={href}
-            class="text-sm text-secondary hover:text-primary transition-colors duration-200"
-          >
+          <a href={href} class="text-sm text-secondary hover:text-primary transition-colors duration-200">
             {label}
           </a>
         ))}
@@ -65,7 +60,7 @@ export const Nav = () => (
         onclick="document.getElementById('mobile-drawer').classList.toggle('open')"
       >
         <svg width="22" height="22" viewBox="0 0 22 22" fill="currentColor">
-          <rect x="2" y="5" width="18" height="1.5" rx="1"/>
+          <rect x="2" y="5"    width="18" height="1.5" rx="1"/>
           <rect x="2" y="10.25" width="18" height="1.5" rx="1"/>
           <rect x="2" y="15.5" width="18" height="1.5" rx="1"/>
         </svg>
@@ -75,10 +70,10 @@ export const Nav = () => (
     {/* Mobile drawer */}
     <div id="mobile-drawer">
       {[
-        { label: 'Work', href: '#work' },
-        { label: 'About', href: '#about' },
+        { label: 'Work',       href: '#work' },
+        { label: 'About',      href: '#about' },
         { label: 'Experience', href: '#experience' },
-        { label: 'Contact', href: '#contact' },
+        { label: 'Contact',    href: '#contact' },
       ].map(({ label, href }) => (
         <a
           href={href}
