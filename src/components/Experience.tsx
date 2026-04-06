@@ -1,11 +1,19 @@
 const roles = [
   {
-    period: 'Aug 2021 — Present',
-    title: 'AI Research Assistant / Software Engineer',
-    company: 'Continuata Ltd',
-    description: 'Researching and prototyping AI methods for music and audio — diffusion models, GANs, DDSP-style approaches. Building experimental systems with frontier AI APIs (OpenAI, Claude, Gemini, ElevenLabs) and contributing full-stack to the Continuata website and Conduct App.',
-    highlights: ['Generative audio models', 'LLM API integration', 'Agile full-stack dev'],
+    period: '2025 — Present',
+    title: 'General Manager (Incoming)',
+    company: 'Continuata.io',
+    description: 'Transitioning into operational leadership of Continuata — a B2B SaaS for large file distribution built on Cloudflare\'s global CDN. Taking over from the founder: onboarding customers, managing commercial relationships, and overseeing day-to-day operations. Revenue-share arrangement.',
+    highlights: ['Customer onboarding', 'B2B SaaS operations', 'Cloudflare platform', 'Revenue share'],
     accent: '#4CC9F0',
+  },
+  {
+    period: 'Aug 2021 — Present',
+    title: 'Software Engineer',
+    company: 'Continuata Ltd',
+    description: 'Full-stack engineering across the Continuata platform and Conduct App. Built proof-of-concept AI-driven applications, integrated third-party AI APIs (OpenAI, Claude, Gemini, ElevenLabs), and contributed to frontend and backend codebases in an Agile environment.',
+    highlights: ['Full-stack development', 'AI API integration', 'Hono · Cloudflare · TypeScript'],
+    accent: '#7C3AED',
   },
   {
     period: '2025 — 2026',
@@ -13,7 +21,7 @@ const roles = [
     company: 'University of Glasgow',
     description: 'Coached a third-year software engineering team through a complete development lifecycle. Supported Agile practices and collaborative workflows, and facilitated workshops alongside industry training from JP Morgan engineers.',
     highlights: ['Agile coaching', 'Team leadership', 'JP Morgan workshops'],
-    accent: '#7C3AED',
+    accent: '#4CC9F0',
   },
   {
     period: '2020 — Present',
@@ -21,7 +29,7 @@ const roles = [
     company: 'Independent',
     description: 'Delivered technical and creative projects for 50+ clients across software, audio, and design — managing requirements, timelines, and long-term professional relationships independently.',
     highlights: ['50+ clients', 'End-to-end delivery', 'Technical consulting'],
-    accent: '#4CC9F0',
+    accent: '#7C3AED',
   },
 ]
 
@@ -35,13 +43,11 @@ export const Experience = () => (
       </div>
 
       <div class="relative">
-        {/* Timeline rail */}
         <div class="absolute left-[7px] top-2 bottom-2 w-px bg-gradient-to-b from-accent-blue/40 via-accent-violet/30 to-transparent hidden md:block" />
 
         <div class="flex flex-col gap-8">
           {roles.map((role, i) => (
-            <div class="reveal relative md:pl-10" style={`transition-delay: ${i * 100}ms;`}>
-              {/* Timeline dot */}
+            <div class="reveal relative md:pl-10" style={`transition-delay: ${i * 80}ms;`}>
               <div
                 class="absolute left-0 top-6 w-3.5 h-3.5 rounded-full border-2 border-bg hidden md:block"
                 style={`background: ${role.accent}; box-shadow: 0 0 12px ${role.accent}60;`}
@@ -76,7 +82,7 @@ export const Experience = () => (
         </div>
       </div>
 
-      {/* Education note */}
+      {/* Education */}
       <div class="reveal mt-10 flex items-start gap-4 border border-white/[0.07] rounded-card-sm p-5 bg-surface">
         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-accent-blue/10 border border-accent-blue/20">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

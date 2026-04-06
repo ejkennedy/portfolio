@@ -1,7 +1,7 @@
 const stats = [
   { value: '5 yrs',  label: 'industry experience' },
   { value: '50+',    label: 'freelance clients' },
-  { value: 'AI + Audio + Web', label: 'core focus areas' },
+  { value: 'SaaS',   label: 'running Continuata.io' },
 ]
 
 export const About = () => (
@@ -50,22 +50,24 @@ export const About = () => (
 
           <div class="reveal space-y-4 text-secondary leading-relaxed text-[17px]">
             <p>
-              Software and AI engineer with 5 years of experience across applied machine
-              learning, generative audio, and full-stack engineering. I've worked at
-              Continuata since 2021 — researching and building AI systems for music and audio,
-              integrating frontier models, and shipping products end to end.
+              Software and AI engineer with 5 years of experience across full-stack
+              engineering, applied ML, and generative audio. I've worked at Continuata
+              since 2021 — building across the platform, integrating AI APIs, and
+              shipping products end to end. I'm now taking over operational leadership
+              of Continuata.io, a B2B SaaS for large file distribution.
             </p>
             <p>
-              I care about making powerful systems feel fast and useful, whether that's a
-              GAN-based piano synthesiser, a production LLM gateway, or a mobile AI coach.
-              Currently completing a BSc in Computer Science at the University of Glasgow.
+              I care about making powerful systems feel fast and useful — whether that's
+              a production LLM gateway, a GAN-based piano synthesiser, or a real business
+              with paying customers. Currently completing a BSc in Computer Science at the
+              University of Glasgow.
             </p>
           </div>
 
           {/* Now / focus strip */}
           <div class="reveal mt-2 flex flex-col gap-2 text-sm">
             {[
-              { label: 'Now',    value: 'AI Research Assistant at Continuata Ltd' },
+              { label: 'Now',    value: 'Running Continuata.io (file distribution SaaS) + onboarding customers' },
               { label: 'Study',  value: 'BSc (Hons) Computer Science — University of Glasgow (2026)' },
               { label: 'Focus',  value: 'Generative audio, LLM systems, full-stack engineering' },
               { label: 'Based',  value: 'Glasgow, UK' },
