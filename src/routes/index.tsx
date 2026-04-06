@@ -5,6 +5,8 @@ import { Work } from "../components/Work";
 import { Skills } from "../components/Skills";
 import { About } from "../components/About";
 import { Experience } from "../components/Experience";
+import { CaseStudy } from "../components/CaseStudy";
+import { Contact } from "../components/Contact";
 
 export const onRequestGet = (c: Context) => {
   return c.render(
@@ -16,6 +18,8 @@ export const onRequestGet = (c: Context) => {
         <Skills />
         <About />
         <Experience />
+        <CaseStudy />
+        <Contact />
       </main>
     </div>
   )
