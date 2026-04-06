@@ -4,8 +4,8 @@ account_id = "f8cd483b056259da8aeb8817b2135da4"
 compatibility_date = "2025-04-06"
 
 routes = [
-  { pattern = "ethankennedy.uk", custom_domain = true, override_existing_dns_record = true },
-  { pattern = "www.ethankennedy.uk", custom_domain = true, override_existing_dns_record = true }
+  { pattern = "ethankennedy.uk", custom_domain = true },
+  { pattern = "www.ethankennedy.uk", custom_domain = true }
 ]
 
 [site]
