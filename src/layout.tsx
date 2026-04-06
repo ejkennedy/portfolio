@@ -5,7 +5,7 @@ export const RootHtml = jsxRenderer(({ children }) => {
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
-        <meta name="description" content="Ethan Kennedy — ML Engineer & Software Developer" />
+        <meta name="description" content="Ethan Kennedy — Software Engineer & AI Engineer. Building across applied ML, generative audio, and full-stack products." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Ethan Kennedy</title>
 

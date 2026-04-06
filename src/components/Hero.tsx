@@ -58,12 +58,12 @@ export const Hero = () => (
           </div>
 
           {/* Trust strip */}
-          <div class="reveal flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div class="reveal flex flex-wrap items-center gap-3">
             {['Python', 'PyTorch', 'Generative Audio', 'TypeScript', 'Go'].map((tech, i) => (
-              <>
-                <span class="text-xs text-secondary/60 font-medium">{tech}</span>
-                {i < 4 && <span class="text-white/10 text-xs">·</span>}
-              </>
+              <span class="text-xs text-secondary/60 font-medium flex items-center gap-3">
+                {tech}
+                {i < 4 && <span class="text-white/10">·</span>}
+              </span>
             ))}
           </div>
         </div>

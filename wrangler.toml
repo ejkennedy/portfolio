@@ -1,5 +1,5 @@
 name = "portfolio"
-main = "src/index.ts"
+main = "src/main.ts"
 compatibility_date = "2023-12-01"
 
 [site]
