@@ -52,9 +52,10 @@ export const About = () => (
             <p>
               Software and AI engineer with 5 years of experience across full-stack
               engineering, applied ML, and generative audio. I've worked at Continuata
-              since 2021 — building across the platform, integrating AI APIs, and
-              shipping products end to end. I'm now taking over operational leadership
-              of Continuata.io, a B2B SaaS for large file distribution.
+              since 2021 — a startup studio building AI products — researching generative
+              models, integrating frontier AI APIs, and shipping products across multiple
+              projects. I'm now taking over operational leadership of Continuata.io,
+              the studio's file distribution SaaS.
             </p>
             <p>
               I care about making powerful systems feel fast and useful — whether that's

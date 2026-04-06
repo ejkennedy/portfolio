@@ -9,10 +9,10 @@ const roles = [
   },
   {
     period: 'Aug 2021 — Present',
-    title: 'Software Engineer',
+    title: 'AI Research Assistant / Software Engineer',
     company: 'Continuata Ltd',
-    description: 'Full-stack engineering across the Continuata platform and Conduct App. Built proof-of-concept AI-driven applications, integrated third-party AI APIs (OpenAI, Claude, Gemini, ElevenLabs), and contributed to frontend and backend codebases in an Agile environment.',
-    highlights: ['Full-stack development', 'AI API integration', 'Hono · Cloudflare · TypeScript'],
+    description: 'Continuata is a startup studio building AI products across music, audio, and software. Researched and prototyped AI methods across multiple internal projects — diffusion models, GANs, DDSP-style synthesis — and integrated frontier AI APIs (OpenAI, Claude, Gemini, ElevenLabs). Also contributed full-stack to the Continuata website, Conduct App, and Continuata.io.',
+    highlights: ['AI startup studio', 'Generative audio research', 'LLM API integration', 'Full-stack dev'],
     accent: '#7C3AED',
   },
   {
