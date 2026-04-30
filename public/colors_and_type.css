@@ -1,0 +1,255 @@
+/* ============================================================
+   Ethan Kennedy — Design Tokens
+   colors_and_type.css
+   ============================================================
+   Foundation layer: raw color/type/spacing/motion variables.
+   Semantic layer: role-based variables built on the foundation.
+   ============================================================ */
+
+/* ---------- Foundation: Color ---------- */
+:root {
+  /* Substrate — near-black navy, four steps of elevation */
+  --bg-0:        #08090d;   /* page */
+  --bg-1:        #0c0e14;   /* shell rails, behind panels */
+  --surface-1:   #11141c;   /* card / panel default */
+  --surface-2:   #161a24;   /* hover / raised */
+  --surface-3:   #1d2230;   /* active row, selected chip */
+
+  /* Hairline borders */
+  --border:        #1f2434;
+  --border-strong: #2b3146;
+  --border-faint:  #161a24;
+
+  /* Foreground */
+  --fg-0:  #f3f5fb;   /* primary text, hero */
+  --fg-1:  #c7ccdb;   /* body */
+  --fg-2:  #8a90a6;   /* secondary / labels */
+  --fg-3:  #5b6178;   /* captions, faint metadata */
+  --fg-4:  #3a3f55;   /* disabled, dotted-grid lines */
+
+  /* Brand accent — magenta/pink */
+  --accent:        #ff3d8a;   /* primary accent */
+  --accent-hot:    #ff5fa0;   /* hover */
+  --accent-deep:   #c41a64;   /* press */
+  --accent-glow:   rgba(255, 61, 138, 0.45);
+  --accent-tint:   rgba(255, 61, 138, 0.12);
+
+  /* Track / instrument hues — tuned to sit alongside the magenta accent on substrate */
+  --track-piano:   #5cc8e6;   /* muted cyan */
+  --track-strings: #9d7bd6;   /* muted purple */
+  --track-pad:     #d65aae;   /* dusty magenta */
+  --track-bass:    #e09a55;   /* warm amber */
+  --track-drums:   #e26464;   /* coral red */
+  --track-vox:     #6a93e0;   /* dusty blue */
+
+  /* Semantic signals */
+  --success: #3ddc97;
+  --warning: #f5b942;
+  --danger:  #f24a4a;
+  --info:    #4ad6ff;
+
+  /* Status / live indicators */
+  --live:    #ff3d8a;
+  --record:  #f24a4a;
+  --idle:    #5b6178;
+}
+
+/* ---------- Foundation: Type ---------- */
+:root {
+  /* Families */
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-display: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace; /* same family — we use weight + size for hierarchy */
+  --font-condensed: "Barlow Condensed", "Oswald", "Helvetica Neue Condensed", sans-serif;
+
+  /* Sizes (4px-grid friendly) */
+  --fs-10: 10px;
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-15: 15px;
+  --fs-16: 16px;
+  --fs-18: 18px;
+  --fs-20: 20px;
+  --fs-24: 24px;
+  --fs-28: 28px;
+  --fs-32: 32px;
+  --fs-40: 40px;
+  --fs-48: 48px;
+  --fs-56: 56px;
+  --fs-64: 64px;
+
+  /* Line heights */
+  --lh-tight:   1.05;
+  --lh-snug:    1.2;
+  --lh-normal:  1.4;
+  --lh-relaxed: 1.6;
+
+  /* Weights — mono looks best at 400/500/700 */
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-bold:    700;
+
+  /* Letter spacing — mono is wide, so we mostly leave it alone */
+  --ls-tight:   -0.01em;
+  --ls-normal:  0;
+  --ls-wide:    0.06em;   /* tracker labels: MASTER, FX */
+  --ls-wider:   0.12em;   /* status pills: AI FOLLOW MODE */
+}
+
+/* ---------- Foundation: Spacing (4px grid) ---------- */
+:root {
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+}
+
+/* ---------- Foundation: Radius / Borders / Shadow ---------- */
+:root {
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+
+  --bw-1: 1px;
+  --bw-2: 2px;
+
+  --shadow-sm:    0 1px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md:    0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg:    0 12px 36px rgba(0, 0, 0, 0.6);
+  --shadow-glow:  0 0 24px -4px var(--accent-glow);
+  --shadow-inset-glow: inset 0 0 0 1px var(--accent), 0 0 12px -2px var(--accent-glow);
+}
+
+/* ---------- Foundation: Motion ---------- */
+:root {
+  --ease-out:   cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro:  120ms;
+  --dur-panel:  220ms;
+  --dur-canvas: 600ms;
+}
+
+/* ---------- Semantic: Type roles ---------- */
+:root {
+  /* Hero / display */
+  --type-hero-size:    var(--fs-48);
+  --type-hero-weight:  var(--fw-bold);
+  --type-hero-lh:      var(--lh-tight);
+  --type-hero-ls:      var(--ls-tight);
+
+  /* H1–H4 */
+  --type-h1-size: var(--fs-32);
+  --type-h2-size: var(--fs-24);
+  --type-h3-size: var(--fs-18);
+  --type-h4-size: var(--fs-14);
+
+  /* Body */
+  --type-body-size: var(--fs-13);
+  --type-body-lh:   var(--lh-relaxed);
+
+  /* UI */
+  --type-ui-size: var(--fs-12);
+  --type-ui-lh:   var(--lh-normal);
+
+  /* Caption / micro labels */
+  --type-caption-size: var(--fs-11);
+  --type-caption-ls:   var(--ls-wide);
+
+  /* Tracker pill (uppercase) */
+  --type-pill-size: var(--fs-10);
+  --type-pill-ls:   var(--ls-wider);
+
+  /* Code */
+  --type-code-size: var(--fs-13);
+}
+
+/* ============================================================
+   Reusable element styles — apply by class
+   ============================================================ */
+
+.text-hero {
+  font-family: var(--font-mono);
+  font-size: var(--type-hero-size);
+  font-weight: var(--type-hero-weight);
+  line-height: var(--type-hero-lh);
+  letter-spacing: var(--type-hero-ls);
+  color: var(--fg-0);
+}
+.text-hero .accent { color: var(--accent); }
+.text-hero .cursor::after {
+  content: "_";
+  color: var(--accent);
+  animation: cursor-blink 1s steps(2, end) infinite;
+}
+@keyframes cursor-blink {
+  50% { opacity: 0; }
+}
+
+.text-h1 { font: var(--fw-bold) var(--type-h1-size)/var(--lh-snug) var(--font-mono); color: var(--fg-0); letter-spacing: var(--ls-tight); }
+.text-h2 { font: var(--fw-medium) var(--type-h2-size)/var(--lh-snug) var(--font-mono); color: var(--fg-0); }
+.text-h3 { font: var(--fw-medium) var(--type-h3-size)/var(--lh-snug) var(--font-mono); color: var(--fg-0); }
+.text-h4 { font: var(--fw-medium) var(--type-h4-size)/var(--lh-normal) var(--font-mono); color: var(--fg-1); }
+
+.text-body { font: var(--fw-regular) var(--type-body-size)/var(--type-body-lh) var(--font-mono); color: var(--fg-1); }
+.text-ui   { font: var(--fw-regular) var(--type-ui-size)/var(--type-ui-lh) var(--font-mono); color: var(--fg-1); }
+.text-caption { font: var(--fw-regular) var(--type-caption-size)/var(--lh-normal) var(--font-mono); color: var(--fg-2); letter-spacing: var(--type-caption-ls); }
+
+/* Tracker pill — uppercase micro-label, e.g. MASTER, M S FX, GLOBAL */
+.text-pill {
+  font: var(--fw-medium) var(--type-pill-size)/1 var(--font-mono);
+  letter-spacing: var(--type-pill-ls);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+/* `// section` comment header */
+.text-comment {
+  font: var(--fw-regular) var(--type-ui-size)/1 var(--font-mono);
+  color: var(--fg-2);
+}
+.text-comment::before { content: "// "; color: var(--fg-3); }
+
+/* Code */
+.text-code {
+  font: var(--fw-regular) var(--type-code-size)/var(--lh-normal) var(--font-mono);
+  color: var(--fg-1);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+/* ---------- Element defaults ---------- */
+body {
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-mono);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-lh);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "calt" 0, "liga" 0; /* keep mono characters distinct */
+}
+
+h1 { font: var(--fw-bold)   var(--type-h1-size)/var(--lh-snug) var(--font-mono); color: var(--fg-0); margin: 0; }
+h2 { font: var(--fw-medium) var(--type-h2-size)/var(--lh-snug) var(--font-mono); color: var(--fg-0); margin: 0; }
+h3 { font: var(--fw-medium) var(--type-h3-size)/var(--lh-snug) var(--font-mono); color: var(--fg-0); margin: 0; }
+h4 { font: var(--fw-medium) var(--type-h4-size)/var(--lh-normal) var(--font-mono); color: var(--fg-1); margin: 0; }
+
+a { color: var(--accent); text-decoration: none; transition: color var(--dur-micro) var(--ease-out); }
+a:hover { color: var(--accent-hot); }
+
+code, pre, kbd, samp { font-family: var(--font-mono); }
+
+::selection { background: var(--accent); color: var(--bg-0); }

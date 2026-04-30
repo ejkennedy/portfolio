@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ethan Kennedy — Neural Portfolio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #08090d; color: #c7ccdb; font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100%; }
+  a { color: inherit; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2b3146; border-radius: 3px; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(2.2); opacity: 0; } }
+  @keyframes signal { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -40; } }
+  @keyframes float-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ───────── stage ───────── */
+  #stage { position: fixed; inset: 0; perspective: 1400px; perspective-origin: 50% 45%; overflow: hidden; cursor: grab; }
+  #stage.dragging { cursor: grabbing; }
+  #stage::before { content:''; position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(31,36,52,0.4) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(31,36,52,0.4) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at center, #000 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 0%, transparent 70%);
+  }
+  .glow-blob { position: absolute; width: 700px; height: 700px; border-radius: 50%; filter: blur(120px); pointer-events: none; }
+  .glow-blob.a { background: rgba(255,61,138,0.15); top: -200px; left: -200px; }
+  .glow-blob.b { background: rgba(106,147,224,0.12); bottom: -200px; right: -200px; }
+  .glow-blob.c { background: rgba(157,123,214,0.08); top: 30%; right: 10%; }
+
+  #world { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 700ms cubic-bezier(0.2,0.8,0.2,1); will-change: transform; }
+  #world.snap { transition: transform 1100ms cubic-bezier(0.16,1,0.3,1); }
+
+  /* ───────── connections ───────── */
+  #wires { position: absolute; inset: 0; pointer-events: none; transform-style: preserve-3d; }
+  #wires svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .wire { fill: none; stroke: rgba(255,61,138,0.25); stroke-width: 1; }
+  .wire.active { stroke: rgba(255,61,138,0.9); stroke-dasharray: 6 4; animation: signal 1.4s linear infinite; }
+  .wire.dim { stroke: rgba(58,63,85,0.4); }
+  .wire.fp-on { stroke: rgba(255,61,138,1); stroke-width: 1.6; filter: drop-shadow(0 0 4px #ff3d8a); }
+  .pulse-dot { fill: #ff3d8a; filter: drop-shadow(0 0 6px #ff3d8a) drop-shadow(0 0 14px #ff3d8a); }
+  .node.firing .node-dot { animation: fire 600ms cubic-bezier(0.2,0.8,0.2,1); }
+  .node.pinned .node-dot { animation: pin-pulse 2.4s ease-in-out infinite; }
+  .node.pinned .node-dot::after { border-color: var(--c, #ff3d8a); opacity: 0.7; animation: pin-ring 2.4s ease-out infinite; }
+  .node.pinned .node-label { color: var(--c, #ff3d8a); border-color: var(--c, #ff3d8a); background: rgba(12,14,20,0.96); font-weight: 700; }
+  .node.pinned .node-label::before { content: '★ '; color: var(--c, #ff3d8a); }
+  @keyframes pin-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 14px var(--c, #ff3d8a), 0 0 30px var(--c, #ff3d8a); }
+    50%      { transform: scale(1.35); box-shadow: 0 0 22px var(--c, #ff3d8a), 0 0 60px var(--c, #ff3d8a), 0 0 90px var(--c, #ff3d8a); }
+  }
+  @keyframes pin-ring {
+    0%   { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(2.6); opacity: 0; }
+  }
+  @keyframes fire {
+    0%   { transform: scale(1); box-shadow: 0 0 14px var(--c, #ff3d8a), 0 0 30px var(--c, #ff3d8a); }
+    40%  { transform: scale(2.2); box-shadow: 0 0 40px #ff3d8a, 0 0 80px #ff3d8a, 0 0 120px #ff3d8a; }
+    100% { transform: scale(1); box-shadow: 0 0 14px var(--c, #ff3d8a), 0 0 30px var(--c, #ff3d8a); }
+  }
+  .fp-btn { font: 500 11px 'JetBrains Mono', monospace; color: #ff3d8a; background: rgba(255,61,138,0.08); border: 1px solid #ff3d8a; border-radius: 2px; padding: 7px 12px; cursor: pointer; letter-spacing: 0.08em; text-transform: uppercase; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .fp-btn:hover { background: rgba(255,61,138,0.18); }
+  .fp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .fp-banner { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 70; font: 700 28px 'JetBrains Mono', monospace; color: #ff3d8a; letter-spacing: 0.16em; text-transform: uppercase; padding: 14px 26px; border: 1px solid #ff3d8a; background: rgba(12,14,20,0.92); backdrop-filter: blur(8px); border-radius: 2px; opacity: 0; transition: opacity 300ms; pointer-events: none; text-shadow: 0 0 20px #ff3d8a; }
+  .fp-banner.on { opacity: 1; }
+  .fp-banner .sub { display: block; font: 500 11px 'JetBrains Mono', monospace; color: #c7ccdb; letter-spacing: 0.12em; margin-top: 6px; text-shadow: none; }
+
+  /* ───────── nodes ───────── */
+  .node { position: absolute; transform-style: preserve-3d; transform: translate(-50%, -50%); cursor: pointer; }
+  .node-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--c, #ff3d8a); box-shadow: 0 0 14px var(--c, #ff3d8a), 0 0 30px var(--c, #ff3d8a); position: relative; }
+  .node-dot::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid var(--c, #ff3d8a); opacity: 0.4; }
+  .node.input .node-dot { width: 10px; height: 10px; }
+  .node.output .node-dot { width: 22px; height: 22px; box-shadow: 0 0 24px var(--c), 0 0 60px var(--c); }
+  .node.output .node-dot::after { animation: pulse-ring 1.8s ease-out infinite; }
+  .node.output .node-dot::before { content: ''; position: absolute; inset: -12px; border-radius: 50%; border: 1px solid var(--c); opacity: 0.6; animation: pulse-ring 1.8s ease-out infinite 0.6s; }
+  .node-label { position: absolute; left: 24px; top: -4px; font: 500 11px/1.3 'JetBrains Mono', monospace; color: #c7ccdb; white-space: nowrap; pointer-events: none; padding: 3px 8px; background: rgba(12,14,20,0.92); border: 1px solid #1f2434; border-radius: 2px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: all 200ms; }
+  .node-label .ix { color: #5b6178; margin-right: 6px; font-weight: 400; }
+  .node-label .accent { color: var(--c, #ff3d8a); }
+  .node:hover .node-label { color: #f3f5fb; border-color: var(--c, #ff3d8a); transform: translateX(4px); }
+  .node:hover .node-dot { transform: scale(1.4); }
+  .node-dot { transition: transform 180ms cubic-bezier(0.2,0.8,0.2,1); }
+  .node.visited .node-dot { background: #08090d; border: 2px solid var(--c, #ff3d8a); box-shadow: 0 0 8px var(--c, #ff3d8a); }
+  .node.active .node-dot { transform: scale(1.6); box-shadow: 0 0 24px var(--c, #ff3d8a), 0 0 60px var(--c, #ff3d8a); }
+  .node.active .node-label { color: var(--c, #ff3d8a); border-color: var(--c, #ff3d8a); background: rgba(12,14,20,0.98); }
+
+  /* layer caps */
+  .layer-cap { position: absolute; transform: translate(-50%, -50%); transform-style: preserve-3d; pointer-events: none; }
+  .layer-cap .lc-title { font: 700 11px 'JetBrains Mono', monospace; color: #f3f5fb; letter-spacing: 0.18em; text-transform: uppercase; text-align: center; padding: 6px 14px; border: 1px solid #1f2434; background: rgba(12,14,20,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 2px; }
+  .layer-cap .lc-sub { font: 400 9px 'JetBrains Mono', monospace; color: #5b6178; letter-spacing: 0.12em; text-transform: uppercase; text-align: center; margin-top: 6px; }
+  .layer-cap .lc-title.input { border-color: #5cc8e6; color: #5cc8e6; }
+  .layer-cap .lc-title.h1 { border-color: #9d7bd6; color: #9d7bd6; }
+  .layer-cap .lc-title.h2 { border-color: #d65aae; color: #d65aae; }
+  .layer-cap .lc-title.h3 { border-color: #e09a55; color: #e09a55; }
+  .layer-cap .lc-title.output { border-color: #ff3d8a; color: #ff3d8a; box-shadow: 0 0 24px rgba(255,61,138,0.4); }
+
+  /* ───────── HUD chrome ───────── */
+  .hud { position: fixed; z-index: 50; pointer-events: auto; font-family: 'JetBrains Mono', monospace; }
+  .hud-tl { top: 16px; left: 16px; display: flex; flex-direction: column; gap: 4px; }
+  .hud-tl .name { font: 700 18px 'JetBrains Mono', monospace; color: #f3f5fb; letter-spacing: -0.02em; }
+  .hud-tl .name .a { color: #ff3d8a; }
+  .hud-tl .role { font: 500 11px 'JetBrains Mono', monospace; color: #8a90a6; }
+  .hud-tl .meta { font: 400 10px 'JetBrains Mono', monospace; color: #5b6178; margin-top: 2px; }
+
+  .hud-tr { top: 16px; right: 16px; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font: 500 10px 'JetBrains Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; color: #c7ccdb; background: rgba(22,26,36,0.85); border: 1px solid #1f2434; border-radius: 2px; padding: 6px 10px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .pill.live { color: #ff3d8a; background: rgba(255,61,138,0.12); border-color: #ff3d8a; }
+  .pill.live .dot { width: 6px; height: 6px; background: #ff3d8a; border-radius: 50%; box-shadow: 0 0 8px #ff3d8a; animation: blink 1.6s steps(2) infinite; }
+  .hud-link { font: 500 10px 'JetBrains Mono', monospace; color: #8a90a6; text-decoration: none; padding: 6px 10px; border: 1px solid #1f2434; border-radius: 2px; background: rgba(22,26,36,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); letter-spacing: 0.06em; }
+  .hud-link:hover { color: #ff3d8a; border-color: #ff3d8a; }
+  .hud-row { display: flex; gap: 6px; }
+
+  /* mini-map */
+  .hud-bl { bottom: 16px; left: 16px; }
+  .minimap { width: 240px; height: 130px; background: rgba(12,14,20,0.92); border: 1px solid #1f2434; border-radius: 4px; padding: 10px 12px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .minimap .mm-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .minimap .mm-title { font: 500 9px 'JetBrains Mono', monospace; color: #5b6178; letter-spacing: 0.14em; text-transform: uppercase; }
+  .minimap .mm-count { font: 700 10px 'JetBrains Mono', monospace; color: #ff3d8a; }
+  .minimap svg { width: 100%; height: 86px; display: block; }
+  .mm-node { fill: #2b3146; transition: fill 200ms; cursor: pointer; }
+  .mm-node.visited { fill: #ff3d8a; }
+  .mm-node.active { fill: #ff3d8a; }
+  .mm-cam { fill: rgba(255,61,138,0.15); stroke: #ff3d8a; stroke-width: 1; stroke-dasharray: 2 2; }
+
+  /* transport / score (bottom center) */
+  .hud-bc { bottom: 16px; left: 50%; transform: translateX(-50%); width: min(640px, calc(100vw - 320px)); }
+  .transport { display: flex; align-items: center; gap: 12px; background: rgba(12,14,20,0.92); border: 1px solid #1f2434; border-radius: 4px; padding: 10px 14px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .transport .play { width: 32px; height: 32px; border-radius: 50%; background: #ff3d8a; color: #08090d; border: 0; cursor: pointer; flex-shrink: 0; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .transport .play:hover { background: #ff5fa0; }
+  .transport .meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 0 0 auto; }
+  .transport .meta .t { font: 500 11px 'JetBrains Mono', monospace; color: #f3f5fb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .transport .meta .s { font: 400 9px 'JetBrains Mono', monospace; color: #5b6178; letter-spacing: 0.06em; }
+  .transport .wave { flex: 1; position: relative; height: 24px; cursor: pointer; min-width: 100px; }
+  .transport .wave svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .transport .wave .base rect { fill: #3a3f55; }
+  .transport .wave .progress rect { fill: #ff3d8a; }
+  .transport .wave .progress { clip-path: inset(0 var(--p, 100%) 0 0); }
+  .transport .time { font: 500 10px 'JetBrains Mono', monospace; color: #8a90a6; font-variant-numeric: tabular-nums; flex-shrink: 0; min-width: 70px; text-align: right; }
+
+  /* hint overlay */
+  .hud-br { bottom: 16px; right: 16px; }
+  .hint { background: rgba(12,14,20,0.92); border: 1px solid #1f2434; border-radius: 4px; padding: 10px 14px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; flex-direction: column; gap: 5px; font: 400 10px 'JetBrains Mono', monospace; color: #8a90a6; }
+  .hint .row { display: flex; justify-content: space-between; gap: 16px; }
+  .hint .row .k { display: inline-flex; gap: 3px; }
+  .hint .row .k kbd { font: 500 9px 'JetBrains Mono', monospace; color: #f3f5fb; background: #161a24; border: 1px solid #2b3146; border-radius: 2px; padding: 1px 5px; }
+  .hint .row .v { color: #5b6178; }
+
+  /* welcome overlay */
+  .welcome { position: fixed; inset: 0; z-index: 100; background: rgba(8,9,13,0.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 24px; transition: opacity 600ms; }
+  .welcome.gone { opacity: 0; pointer-events: none; }
+  .welcome-card { max-width: 520px; background: #0c0e14; border: 1px solid #1f2434; border-radius: 4px; padding: 32px; position: relative; overflow: hidden; }
+  .welcome-card::before { content:''; position:absolute; inset:0; background-image: radial-gradient(rgba(255,61,138,0.15) 1px, transparent 1px); background-size: 16px 16px; opacity: 0.4; pointer-events:none; }
+  .welcome-card .h { font: 700 32px/1.05 'JetBrains Mono', monospace; color: #f3f5fb; letter-spacing: -0.02em; margin: 12px 0 8px; }
+  .welcome-card .h .a { color: #ff3d8a; }
+  .welcome-card .sub { font: 500 13px 'JetBrains Mono', monospace; color: #c7ccdb; margin: 0 0 14px; }
+  .welcome-card .body { font: 400 12px/1.7 'JetBrains Mono', monospace; color: #8a90a6; margin: 0 0 18px; position: relative; z-index: 1; }
+  .welcome-card .body .a { color: #ff3d8a; }
+  .welcome-card .keys { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; margin-bottom: 20px; position: relative; z-index: 1; }
+  .welcome-card .keys .row { display: flex; justify-content: space-between; align-items: center; font: 400 11px 'JetBrains Mono', monospace; color: #8a90a6; }
+  .welcome-card .keys .row kbd { font: 500 10px 'JetBrains Mono', monospace; color: #f3f5fb; background: #161a24; border: 1px solid #2b3146; border-radius: 2px; padding: 1px 6px; }
+  .welcome-card .start { position: relative; z-index: 1; display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-primary { font: 500 12px 'JetBrains Mono', monospace; color: #08090d; background: #ff3d8a; border: 1px solid #ff3d8a; border-radius: 2px; padding: 10px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-primary:hover { background: #ff5fa0; }
+  .btn-ghost { font: 500 12px 'JetBrains Mono', monospace; color: #c7ccdb; background: transparent; border: 1px solid #2b3146; border-radius: 2px; padding: 10px 16px; cursor: pointer; }
+  .btn-ghost:hover { color: #ff3d8a; border-color: #ff3d8a; }
+  .welcome-card .kicker { font: 400 10px 'JetBrains Mono', monospace; color: #5b6178; letter-spacing: 0.18em; text-transform: uppercase; }
+  .welcome-card .kicker::before { content: '// '; color: #3a3f55; }
+
+  /* node-detail panel */
+  .panel { position: fixed; z-index: 60; top: 16px; right: 16px; width: 380px; max-width: calc(100vw - 32px); max-height: calc(100vh - 280px); background: #0c0e14; border: 1px solid #1f2434; border-radius: 4px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transform: translateX(120%); opacity: 0; transition: transform 500ms cubic-bezier(0.2,0.8,0.2,1), opacity 500ms; display: flex; flex-direction: column; overflow: hidden; }
+  .panel.open { transform: translateX(0); opacity: 1; }
+  .panel-head { padding: 14px 16px; border-bottom: 1px solid #1f2434; display: flex; align-items: flex-start; gap: 12px; flex-shrink: 0; }
+  .panel-head .layer-tag { font: 500 9px 'JetBrains Mono', monospace; letter-spacing: 0.18em; text-transform: uppercase; color: var(--c); padding: 3px 8px; border: 1px solid var(--c); border-radius: 2px; flex-shrink: 0; margin-top: 2px; }
+  .panel-head .h { font: 500 15px/1.3 'JetBrains Mono', monospace; color: #f3f5fb; flex: 1; }
+  .panel-head .x { font: 700 14px 'JetBrains Mono', monospace; color: #5b6178; cursor: pointer; padding: 0 4px; background: transparent; border: 0; }
+  .panel-head .x:hover { color: #ff3d8a; }
+  .panel-body { padding: 16px; overflow-y: auto; flex: 1; }
+  .panel-body p { font: 400 12px/1.7 'JetBrains Mono', monospace; color: #c7ccdb; margin: 0 0 12px; }
+  .panel-body p .a { color: #ff3d8a; }
+  .panel-body .comment { font: 400 11px 'JetBrains Mono', monospace; color: #5b6178; margin-bottom: 6px; }
+  .panel-body .comment::before { content: '// '; color: #3a3f55; }
+  .panel-body ul { font: 400 12px/1.7 'JetBrains Mono', monospace; color: #c7ccdb; margin: 0 0 12px; padding-left: 18px; }
+  .panel-body ul li::marker { color: var(--c, #ff3d8a); }
+  .panel-body .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .panel-body .tag { font: 400 10px 'JetBrains Mono', monospace; color: #c7ccdb; background: #161a24; border: 1px solid #1f2434; border-radius: 2px; padding: 3px 7px; }
+  .panel-body .meta-row { display: grid; grid-template-columns: 80px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid #161a24; font: 400 11px 'JetBrains Mono', monospace; }
+  .panel-body .meta-row:last-of-type { border-bottom: 0; margin-bottom: 12px; }
+  .panel-body .meta-row .k { color: #5b6178; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; padding-top: 2px; }
+  .panel-body .meta-row .v { color: #f3f5fb; }
+  .panel-body .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .panel-body .links a { font: 500 10px 'JetBrains Mono', monospace; color: #ff3d8a; text-decoration: none; padding: 5px 10px; border: 1px solid #ff3d8a; border-radius: 2px; }
+  .panel-body .links a:hover { background: rgba(255,61,138,0.1); }
+  .panel-foot { padding: 10px 16px; border-top: 1px solid #1f2434; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; gap: 8px; }
+  .panel-foot .nav { display: flex; gap: 4px; }
+  .panel-foot button { font: 500 10px 'JetBrains Mono', monospace; color: #c7ccdb; background: transparent; border: 1px solid #2b3146; border-radius: 2px; padding: 5px 9px; cursor: pointer; }
+  .panel-foot button:hover { color: #ff3d8a; border-color: #ff3d8a; }
+  .panel-foot button.next { color: #ff3d8a; border-color: #ff3d8a; }
+  .panel-foot button.next:hover { background: rgba(255,61,138,0.12); }
+
+  /* score-mode underlay */
+  .score-overlay { position: fixed; inset: 0; z-index: 5; pointer-events: none; opacity: 0; transition: opacity 600ms; }
+  .score-overlay.on { opacity: 1; }
+  .score-line { position: absolute; left: 0; right: 0; height: 1px; background: rgba(255,61,138,0.2); }
+
+  /* boot pulse */
+  .boot { position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%); font: 400 10px 'JetBrains Mono', monospace; color: #5b6178; letter-spacing: 0.16em; text-transform: uppercase; z-index: 40; pointer-events: none; opacity: 0.6; }
+  .boot::before { content: '● '; color: #3ddc97; animation: blink 1.6s steps(2) infinite; }
+
+  @media (max-width: 760px) {
+    .hud-tl { top: 12px; left: 12px; }
+    .hud-tl .name { font-size: 16px; }
+    .hud-tr { top: 12px; right: 12px; }
+    .hud-bl { display: none; }
+    .hud-bc { width: calc(100vw - 24px); left: 50%; bottom: 12px; }
+    .hud-br { display: none; }
+    .panel { width: calc(100vw - 24px); top: 70px; max-height: 50vh; }
+    .welcome-card { padding: 22px; }
+    .welcome-card .h { font-size: 24px; }
+    .welcome-card .keys { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ───────── 3D STAGE ───────── -->
+<div id="stage">
+  <div class="glow-blob a"></div>
+  <div class="glow-blob b"></div>
+  <div class="glow-blob c"></div>
+  <div id="world">
+    <div id="wires"><svg id="wireSvg"></svg></div>
+    <!-- nodes injected here -->
+  </div>
+</div>
+
+<!-- ───────── HUD ───────── -->
+<div class="hud hud-tl">
+  <span class="kicker" style="font: 400 9px 'JetBrains Mono', monospace; color: #5b6178; letter-spacing: 0.18em; text-transform: uppercase">// neural portfolio · v.2026.04</span>
+  <span class="name">ethan<span class="a">.kennedy</span></span>
+  <span class="role">software · ai · ml engineer</span>
+  <span class="meta">glasgow, uk · BSc CS · 2026</span>
+</div>
+
+<div class="hud hud-tr">
+  <span class="pill live"><span class="dot"></span>open to roles</span>
+  <div class="hud-row">
+    <a class="hud-link" href="mailto:ethan@continuata.com">✉ mail</a>
+    <a class="hud-link" href="https://github.com/ejkennedy" target="_blank" rel="noopener">↗ github</a>
+    <a class="hud-link" href="assets/ethankennedy-cv_30-04-26.pdf">↓ cv</a>
+  </div>
+  <button class="fp-btn" id="fpBtn">▶ run forward pass</button>
+  <button class="hud-link" id="resetView" style="cursor:pointer;background:rgba(22,26,36,0.85)">⟲ reset view</button>
+</div>
+
+<div class="hud hud-bl">
+  <div class="minimap">
+    <div class="mm-head">
+      <span class="mm-title">network map</span>
+      <span class="mm-count" id="visitCount">0 / 0 visited</span>
+    </div>
+    <svg id="minimapSvg" viewBox="0 0 220 86" preserveAspectRatio="none"></svg>
+  </div>
+</div>
+
+<div class="hud hud-bc">
+  <div class="transport">
+    <button class="play" id="playBtn" aria-label="Play">▶</button>
+    <div class="meta">
+      <span class="t">psycho princess <span style="color:#5b6178">· ethan kennedy</span></span>
+      <span class="s">composed · played · recorded by ethan</span>
+    </div>
+    <div class="wave" id="wave">
+      <svg viewBox="0 0 240 24" preserveAspectRatio="none">
+        <g class="base" id="waveBase"></g>
+        <g class="progress" id="waveProg" style="--p: 100%"></g>
+      </svg>
+    </div>
+    <span class="time" id="timeDisp">0:00 / 0:00</span>
+  </div>
+</div>
+
+<div class="hud hud-br">
+  <div class="hint">
+    <div class="row"><span class="k"><kbd>drag</kbd></span><span class="v">orbit network</span></div>
+    <div class="row"><span class="k"><kbd>scroll</kbd></span><span class="v">zoom</span></div>
+    <div class="row"><span class="k"><kbd>click node</kbd></span><span class="v">inspect</span></div>
+    <div class="row"><span class="k"><kbd>tab</kbd> / <kbd>→</kbd></span><span class="v">next node</span></div>
+    <div class="row"><span class="k"><kbd>esc</kbd></span><span class="v">back to grid</span></div>
+  </div>
+</div>
+
+<!-- ───────── DETAIL PANEL ───────── -->
+<aside class="panel" id="panel" style="--c: #ff3d8a">
+  <div class="panel-head">
+    <span class="layer-tag" id="pLayer">LAYER</span>
+    <span class="h" id="pTitle">title</span>
+    <button class="x" id="pClose" aria-label="close">✕</button>
+  </div>
+  <div class="panel-body" id="pBody"></div>
+  <div class="panel-foot">
+    <button id="pPrev">← prev</button>
+    <span style="font: 400 10px 'JetBrains Mono', monospace; color: #5b6178" id="pIdx">— / —</span>
+    <button class="next" id="pNext">next →</button>
+  </div>
+</aside>
+
+<!-- ───────── WELCOME ───────── -->
+<div class="welcome" id="welcome">
+  <div class="welcome-card">
+    <span class="kicker">welcome.exe loaded</span>
+    <h1 class="h">forward-pass through<br>my <span class="a">network<span style="animation:blink 1s steps(2) infinite">_</span></span></h1>
+    <p class="sub">5+ years across applied ML, LLM systems, and generative audio.</p>
+    <p class="body">this isn't a normal portfolio. it's a 3D <span class="a">neural network</span> — the input layer is what i work with, the hidden layers are what i've actually shipped, and the output is just me. orbit it freely in 3D, click any node to inspect. the score playing throughout is "psycho princess" — i wrote, played and recorded it.</p>
+    <div class="keys">
+      <div class="row"><span>orbit network</span><kbd>drag</kbd></div>
+      <div class="row"><span>zoom in / out</span><kbd>scroll</kbd></div>
+      <div class="row"><span>inspect node</span><kbd>click</kbd></div>
+      <div class="row"><span>auto-tour</span><kbd>tab / →</kbd></div>
+      <div class="row"><span>back to grid</span><kbd>esc</kbd></div>
+      <div class="row"><span>forward pass</span><kbd>F</kbd></div>
+      <div class="row"><span>play / pause score</span><kbd>space</kbd></div>
+    </div>
+    <div class="start">
+      <button class="btn-primary" id="enterBtn">▶ enter network</button>
+      <button class="btn-ghost" id="fpStartBtn">⚡ run forward pass</button>
+      <button class="btn-ghost" id="tourBtn">// auto-tour</button>
+    </div>
+  </div>
+</div>
+
+<div class="boot" id="bootMsg">network compiled · 0 errors · 1 graduate ready for forward pass</div>
+<div class="fp-banner" id="fpBanner">forward pass<span class="sub" id="fpStage">// initializing</span></div>
+
+<audio id="audio" src="assets/music/Psycho-Princess.mp3" preload="metadata"></audio>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   GRAPH DATA — 5 layers of nodes (input → hidden → output)
+═════════════════════════════════════════════════════════════ */
+const LAYERS = [
+  { id: 'input', title: 'input · core skills', sub: 'what i work with', color: '#5cc8e6', x: -560 },
+  { id: 'h1',    title: 'hidden 1 · projects', sub: 'what i\'ve shipped', color: '#9d7bd6', x: -240 },
+  { id: 'h2',    title: 'hidden 2 · research & systems', sub: 'how i think', color: '#d65aae', x: 60 },
+  { id: 'h3',    title: 'hidden 3 · experience', sub: 'where i\'ve worked', color: '#e09a55', x: 360 },
+  { id: 'output',title: 'output · ethan', sub: 'one engineer', color: '#ff3d8a', x: 660 },
+];
+
+/* node positions: y/z scattered for organic 3D layout. label sides alternate. */
+const NODES = [
+  // ───── INPUT LAYER · core skills ─────
+  { id:'sk-py',     layer:'input', label:'Python',          y:-220, z: -80 },
+  { id:'sk-ts',     layer:'input', label:'TypeScript',      y:-130, z:  60 },
+  { id:'sk-go',     layer:'input', label:'Go · Lua · C++',  y: -40, z:-140 },
+  { id:'sk-ml',     layer:'input', label:'PyTorch · DL',    y:  60, z:  40 },
+  { id:'sk-llm',    layer:'input', label:'LLM eng · agents',y: 150, z:-100 },
+  { id:'sk-dsp',    layer:'input', label:'JUCE · DSP · MIDI',y: 230, z: 80 },
+  { id:'sk-cf',     layer:'input', label:'Cloudflare edge', y: -300, z: 110 },
+  { id:'sk-ml-ops', layer:'input', label:'MLOps · Ray · ONNX',y: 320, z:-50 },
+
+  // ───── HIDDEN 1 · projects (the core of the portfolio) ─────
+  { id:'p-llm',     layer:'h1', label:'LLM Inference Platform', y:-280, z:  60 },
+  { id:'p-diss',    layer:'h1', label:'MIDI→Piano GAN (diss)',   y:-180, z: -90 },
+  { id:'p-evolve',  layer:'h1', label:'Evolve — AI Habit Coach', y: -60, z:  90 },
+  { id:'p-aria',    layer:'h1', label:'A.R.I.A. — AI in Reaper', y:  50, z: -110 },
+  { id:'p-fraud',   layer:'h1', label:'Streaming Fraud Detection', y: 160, z:  60 },
+  { id:'p-tm',      layer:'h1', label:'TM Trees site',          y: 250, z: -50, pinned: true },
+  { id:'p-ari-vst', layer:'h1', label:'JUCE/C++ VST Plugin',    y: 340, z:  80 },
+
+  // ───── HIDDEN 2 · research / systems ─────
+  { id:'r-gan',     layer:'h2', label:'Generative audio research', y:-260, z: -60 },
+  { id:'r-llm',     layer:'h2', label:'LLM systems · agents',      y:-140, z:  90 },
+  { id:'r-mlops',   layer:'h2', label:'MLOps · drift · rollback',  y: -20, z:-120 },
+  { id:'r-edge',    layer:'h2', label:'Edge inference @ p95<50ms', y: 110, z:  60 },
+  { id:'r-conduct', layer:'h2', label:'Continuata Bridge App',  y: 240, z: -50 },
+  { id:'r-eval',    layer:'h2', label:'Prompt registry · evals',   y: 340, z:  70 },
+
+  // ───── HIDDEN 3 · experience / education ─────
+  { id:'e-cont',  layer:'h3', label:'Continuata — Full-stack dev',     y:-240, z:  60 },
+  { id:'e-coach', layer:'h3', label:'Glasgow — SE Team Coach (JPM)',   y:-100, z: -80 },
+  { id:'e-free',  layer:'h3', label:'Freelance · 50+ clients',         y:  40, z:  90 },
+  { id:'e-tree',  layer:'h3', label:'TM Trees — tree surgeon (1+ yr)', y: 180, z: -50 },
+  { id:'e-edu',   layer:'h3', label:'BSc CS · Glasgow · 2026',         y: 280, z:  50 },
+  { id:'e-extra', layer:'h3', label:'Extra training · languages',       y: 380, z: -90 },
+
+  // ───── OUTPUT LAYER ─────
+  { id:'out',     layer:'output', label:'Ethan Kennedy — open to work', y: 0, z: 0 },
+];
+
+/* ── node detail content (rich; opens in panel) ─────────── */
+const DETAIL = {
+  // skills
+  'sk-py':  { kind:'skill', tags:['Python','FastAPI','Django','Flask','PyTorch'], body:`<p>primary research & backend language. used across ML training, scientific computing, scripting, and production APIs (Continuata, freelance).</p>`},
+  'sk-ts':  { kind:'skill', tags:['TypeScript','Hono','Bun','Drizzle'], body:`<p>day-to-day language for shipped product code. Hono on Cloudflare Workers, Bun for tooling, Drizzle for SQL.</p>`},
+  'sk-go':  { kind:'skill', tags:['Go','Lua','C++','C','Java','Bash'], body:`<p>secondary languages by use-case: <span class="a">Lua</span> for ReaScript automation in A.R.I.A., <span class="a">C++</span> for the dissertation VST plugin, Go and Java for backend & coursework.</p>`},
+  'sk-ml': { kind:'skill', tags:['PyTorch','TensorFlow','GANs','Diffusion','Differentiable DSP'], body:`<p>deep-learning: GANs (dissertation), diffusion sketches for audio, and differentiable-DSP-style approaches for parameter-efficient generative models. honours research lives here.</p>`},
+  'sk-llm':{ kind:'skill', tags:['Claude SDK','OpenAI','Gemini','Tool use','Pipecat','AI Gateway'], body:`<p>LLM-product engineering: agents with tool use, prompt registries, evals, AI Gateway routing, normalized SSE streaming.</p>`},
+  'sk-dsp':{ kind:'skill', tags:['JUCE','C++','MIDI','Synthesis','Reaper / ReaScript'], body:`<p>real-time audio: JUCE/C++ VSTs, MIDI parsing, physical-modelling synthesis, ReaScript Lua surfaces. the bridge from research to a producer pressing a button.</p>`},
+  'sk-cf': { kind:'skill', tags:['Cloudflare Workers','D1','R2','Durable Objects','Terraform'], body:`<p>Cloudflare-native shipping: Workers, D1, R2, Durable Objects for rate limiting + budget enforcement, Terraform IaC, multi-env CD with smoke tests.</p>`},
+  'sk-ml-ops':{ kind:'skill', tags:['Ray Serve','ONNX Runtime','MLflow','Feast','Evidently','PyFlink'], body:`<p>online ML infrastructure: Ray Serve + ONNX, MLflow shadow deployment & rollback, Evidently drift, Feast/Redis online store, PyFlink streaming features.</p>`},
+
+  // projects (HIDDEN 1)
+  'p-llm':  { kind:'project', meta:{stack:'TypeScript · Cloudflare · SSE · Durable Objects · Terraform · Grafana', focus:'edge LLM gateway · per-user budgets'}, body:`<p>production-oriented edge LLM gateway on Cloudflare Workers. authenticated chat (JWT/JWKS), router-based model selection, AI Gateway routing, normalized SSE streaming, Workers AI / external-provider fallback.</p><ul><li>Durable Object rate limiting + budget enforcement</li><li>Versioned prompt registry with evals</li><li>Analytics Engine cost / latency surfaced via Prometheus + Grafana</li><li>Terraform IaC, multi-env CD with scheduled prod smoke tests</li></ul>`, tags:['Cloudflare Workers','TypeScript','SSE','Durable Objects','Terraform','Grafana'], links:[['github','https://github.com/ejkennedy/LLM-Inference-Platform']] },
+  'p-diss': { kind:'project', meta:{type:'Honours dissertation', focus:'GAN · symbolic MIDI → expressive piano audio'}, body:`<p>self-proposed honours dissertation. <span class="a">GAN architecture</span> converting symbolic MIDI to expressive piano audio — modelling timing, dynamics, and timbre. companion <span class="a">JUCE/C++ VST</span> runs the trained model in real time via JSON control data + a physical-modelling synth.</p><ul><li>research → real-time plugin pipeline</li><li>signal-quality evaluation against reference renderers</li><li>both DAW-loadable and headless inference paths</li></ul>`, tags:['PyTorch','GANs','JUCE','C++','MIDI','DDSP'], links:[['github','https://github.com/ejkennedy']] },
+  'p-aria': { kind:'project', meta:{stack:'Tauri 2 · Pipecat · Deepgram · Cartesia · ReaScript Lua', focus:'real-time AI audio engineer inside Reaper'}, body:`<p>A.R.I.A. — Audio Routing & Instrumentation Assistant. real-time AI engineer that lives inside Reaper.</p><ul><li>voice-driven session setup, tracking, take management</li><li>FX-chain templates, mix assist</li><li>Tauri 2 desktop shell + Pipecat (Deepgram → LLM → Cartesia) bridged to a ~60-tool ReaScript Lua surface</li><li>fuzzy plugin matching across VST / VST3 / AU / CLAP / JS</li></ul>`, tags:['Tauri 2','Pipecat','ReaScript Lua','LLM agents'], links:[['github','https://github.com/ejkennedy']] },
+  'p-fraud':{ kind:'project', meta:{stack:'PyFlink · Feast · Ray Serve · ONNX · MLflow · Evidently', focus:'sub-50ms p95 streaming inference'}, body:`<p>end-to-end MLOps stack for real-time fraud detection.</p><ul><li>PyFlink streaming features → Feast / Redis online store</li><li>Ray Serve + ONNX with pre-warmed session pool, msgspec-typed decoding, optional int8-quantized inference path</li><li>MLflow registry with shadow deployment, drift detection (Evidently), one-click rollback</li><li>Online adaptation via SGD micro-batches + LinUCB contextual bandit</li></ul>`, tags:['Ray Serve','PyFlink','ONNX','MLflow','Evidently'], links:[['github','https://github.com/ejkennedy/Real-Time-Fraud-Detection-MLOps-Platform']] },
+  'p-tm':   { kind:'project', meta:{stack:'Hono · Tailwind · daisyUI · Cloudflare Workers', focus:'production marketing site · freelance build'}, body:`<p>i worked at <span class="a">TM Trees</span> as a tree surgeon for over a year before going back into CS. later, i came back as a freelance developer and <span class="a">built and shipped their entire website</span> on Cloudflare Workers — Hono, Tailwind, daisyUI. small site, real customer, ground truth on the brand because i'd been on the crew.</p><ul><li>full design + build + deploy on Cloudflare</li><li>integrated with their booking workflow</li><li>still live in production</li></ul>`, tags:['Hono','Tailwind','Cloudflare','Freelance','Full delivery'], links:[['↗ visit tmtrees.com','https://tmtrees.com'],['↗ linked to e-tree','#e-tree']] },
+  'p-evolve':{ kind:'project', meta:{stack:'Flutter · Dart · Claude SDK', focus:'AI-powered adaptive goals & habits coach'}, body:`<p><span class="a">Evolve</span> — cross-platform mobile app built in Flutter. context-aware coaching chat powered by Claude, predictive insights, habit tracking with streaks, and SMART goal management.</p><ul><li>Claude-driven coaching that adapts to the user's actual habit data</li><li>predictive insights surface patterns before they become problems</li><li>SMART goal scaffolding + streak/progress mechanics</li><li>Flutter for shared iOS/Android codebase</li></ul>`, tags:['Flutter','Dart','Claude SDK','mobile','LLM agent'], links:[['github','https://github.com/ejkennedy/evolve-app']] },
+  'p-ari-vst':{ kind:'project', meta:{stack:'JUCE · C++ · ONNX-runtime · MIDI', focus:'research model → loadable plugin'}, body:`<p>JUCE/C++ VST that loads the trained dissertation model and renders MIDI to expressive piano audio inside any DAW. real-time, low-latency, MIDI-driven control surface mapped to model conditioning.</p>`, tags:['JUCE','C++','VST','ONNX'] },
+
+  // research / systems (HIDDEN 2)
+  'r-gan':  { kind:'research', body:`<p>generative-audio research (training, evaluation, packaging). proof-of-concept builds at Continuata + dissertation lineage. comfortable with GANs, diffusion, differentiable DSP.</p>`, tags:['GANs','Diffusion','DDSP'] },
+  'r-llm':  { kind:'research', body:`<p>LLM systems engineering — turning a model behind an API into something that survives a real product: routing, evals, prompt registries, tool-use agents, token budgeting.</p>`, tags:['agents','tool use','evals','AI Gateway'] },
+  'r-mlops':{ kind:'research', body:`<p>online-ML infra patterns: shadow deployment, drift detection, rollback, online adaptation, contextual bandits.</p>`, tags:['MLflow','Evidently','LinUCB'] },
+  'r-edge': { kind:'research', body:`<p>edge-inference: pre-warmed ONNX session pools, msgspec-typed decoding, optional int8 quantized paths — sub-50ms p95 architecture.</p>`, tags:['ONNX','Ray Serve','Cloudflare'] },
+  'r-conduct':{ kind:'research', body:`<p>Continuata Bridge App — the product. shipped product features that integrate proprietary models with frontier APIs (Claude, OpenAI, Gemini, ElevenLabs) into user-facing flows.</p>`, tags:['Claude','OpenAI','Gemini','ElevenLabs'] },
+  'r-eval': { kind:'research', body:`<p>versioned prompt registry, eval harnesses, regression checks before prompt rollouts. small but boring infrastructure that makes LLM products survive.</p>`, tags:['prompt registry','evals'] },
+
+  // experience (HIDDEN 3)
+  'e-cont':  { kind:'role', meta:{co:'Continuata Ltd · continuata.io', when:'Aug 2021 → present'}, body:`<p>Full-Stack Developer. delivery on the Continuata website and Conduct App across frontend & backend (Python, TypeScript, Hono, Cloudflare) in an Agile environment.</p><ul><li>shipped product features integrating proprietary models with third-party AI APIs (OpenAI, Claude, Gemini, ElevenLabs)</li><li>researched and prototyped AI methods for music & audio applications</li><li>built proof-of-concept AI-driven applications in Python with API-based architectures</li></ul>`, tags:['Python','TypeScript','Hono','Cloudflare','Claude / OpenAI / Gemini'] },
+  'e-coach': { kind:'role', meta:{co:'University of Glasgow', when:'2025 → 2026'}, body:`<p>Software Development Team Coach. coached a third-year SE team through a full development lifecycle project.</p><ul><li>supported Agile practices, collaborative workflows, and adoption of new technologies</li><li>facilitated workshops following industry-led training delivered by JP Morgan engineers</li></ul>`, tags:['Agile coaching','team leadership','JP Morgan workshops'] },
+  'e-free':  { kind:'role', meta:{co:'Independent', when:'2020 → present'}, body:`<p>delivered technical and creative projects for <span class="a">50+ clients</span>, managing requirements, deadlines, and long-term professional relationships independently. recent: TM Trees marketing site.</p>`, tags:['50+ clients','end-to-end delivery'] },
+  'e-tree':  { kind:'role', meta:{co:'TM Trees', when:'1+ year (pre-CS)'}, body:`<p>worked as a <span class="a">tree surgeon</span> for over a year. chainsaws, climbing, rigging, ground crew. plan the cut twice, commit to it once — same instinct i bring to debugging a streaming pipeline.</p><p>later: came back as a freelance dev and <span class="a">built their entire website</span>.</p>`, tags:['climbing','rigging','ground crew','first aid'], links:[['↗ tmtrees.com','https://tmtrees.com']] },
+  'e-edu':   { kind:'role', meta:{co:'University of Glasgow', when:'expected June 2026'}, body:`<p>BSc (Hons) Computer Science. Relevant: AI, Machine Learning, Deep Learning, Big Data, Networked Systems.</p>`, tags:['AI','ML','Deep Learning','Big Data','Networked Systems'] },
+  'e-extra': { kind:'role', meta:{focus:'self-directed training & extra-curricular'}, body:`<p>extra-curriculars and self-directed training that don't fit a standard CV slot but show range:</p><ul><li>The Complete JavaScript Course 2024 — Zero to Expert</li><li>TensorFlow for Deep Learning Bootcamp (2023)</li><li>Voice Acting course with Laci Morgan (2023)</li><li>Mandarin Chinese — intermediate proficiency (2021–2023)</li><li>Scottish Space School (2020) · Mission Discovery (2018)</li></ul><p>also baked into how i work day-to-day: <span class="a">Agile</span> methodologies (academic + professional at Continuata), strong client comms, and explaining technical concepts to non-technical audiences.</p>`, tags:['JavaScript','TensorFlow','Mandarin','Voice Acting','Space School','Agile'] },
+
+  // output
+  'out':    { kind:'output', meta:{role:'Software & AI Engineer', based:'Glasgow, UK', status:'Open to roles · 2026'}, body:`<p>5+ years across applied ML, generative audio, and full-stack systems. comfortable training a model and packaging it as a thing a user can press a button on.</p><p>looking for AI/ML & software engineering, full-stack, or contract work. happy to chat.</p>`, tags:['AI','full-stack','ML','open to relocate'], links:[['✉ ethan@continuata.com','mailto:ethan@continuata.com'],['↓ cv','assets/ethankennedy-cv_30-04-26.pdf'],['github','https://github.com/ejkennedy']] },
+};
+
+/* ════════════════════════════════════════════════════════════
+   STATE & RENDER
+═════════════════════════════════════════════════════════════ */
+const world = document.getElementById('world');
+const stage = document.getElementById('stage');
+const wireSvg = document.getElementById('wireSvg');
+const visited = new Set();
+
+let cam = { rx: -8, ry: 22, scale: 0.78, panX: 0, panY: 0 };
+let snap = false;
+
+function applyCam(){
+  world.style.transform = `translate3d(${cam.panX}px, ${cam.panY}px, 0) scale(${cam.scale}) rotateX(${cam.rx}deg) rotateY(${cam.ry}deg)`;
+  world.classList.toggle('snap', snap);
+}
+
+function nodePos(n){
+  const layer = LAYERS.find(l => l.id === n.layer);
+  return { x: layer.x, y: n.y, z: n.z, color: layer.color };
+}
+
+/* render nodes */
+const elById = {};
+function renderNodes(){
+  // layer caps (centered above each layer column)
+  LAYERS.forEach(l => {
+    const cap = document.createElement('div');
+    cap.className = 'layer-cap';
+    cap.style.left = '50%';
+    cap.style.top = '50%';
+    cap.style.transform = `translate(-50%, -50%) translate3d(${l.x}px, -360px, 0)`;
+    cap.innerHTML = `<div class="lc-title ${l.id}">${l.title}</div><div class="lc-sub">${l.sub}</div>`;
+    world.appendChild(cap);
+  });
+
+  const PINNED = new Set(['p-llm','p-diss','p-evolve','p-tm','e-cont','e-tree','e-edu']);
+  NODES.forEach((n, i) => {
+    const p = nodePos(n);
+    const el = document.createElement('div');
+    el.className = 'node ' + (n.layer === 'input' ? 'input' : n.layer === 'output' ? 'output' : 'hidden');
+    if (PINNED.has(n.id)) el.classList.add('pinned');
+    el.style.left = '50%';
+    el.style.top = '50%';
+    el.style.setProperty('--c', p.color);
+    el.style.transform = `translate(-50%,-50%) translate3d(${p.x}px, ${p.y}px, ${p.z}px)`;
+    const labelSide = n.layer === 'output' ? 'right:auto;left:auto;top:36px;left:50%;transform:translateX(-50%)' :
+                       (n.layer === 'input' ? 'left:auto;right:24px;text-align:right' : '');
+    el.innerHTML = `
+      <div class="node-dot"></div>
+      <div class="node-label" style="${labelSide}"><span class="ix">[${i.toString().padStart(2,'0')}]</span><span>${n.label}</span></div>
+    `;
+    el.addEventListener('click', (e) => { e.stopPropagation(); openNode(n.id); });
+    world.appendChild(el);
+    elById[n.id] = el;
+  });
+}
+
+/* draw wires between layers (input→h1→h2→h3→output, partial sampling) */
+function renderWires(){
+  const W = window.innerWidth, H = window.innerHeight;
+  wireSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  wireSvg.innerHTML = '';
+  const layerNodes = id => NODES.filter(n => n.layer === id);
+
+  function project(n){
+    // approximate 2D screen position from world coords + cam
+    const p = nodePos(n);
+    // simple projection: ignore rotation perspective for the wires (pure 2D between layers)
+    return { x: W/2 + p.x, y: H/2 + p.y };
+  }
+  function connect(fromArr, toArr, sample=0.55){
+    fromArr.forEach(a => {
+      toArr.forEach(b => {
+        if (Math.random() > sample) return;
+        const A = project(a), B = project(b);
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const cx = (A.x + B.x) / 2;
+        path.setAttribute('d', `M ${A.x} ${A.y} C ${cx} ${A.y}, ${cx} ${B.y}, ${B.x} ${B.y}`);
+        path.setAttribute('class', 'wire');
+        path.dataset.from = a.id; path.dataset.to = b.id;
+        wireSvg.appendChild(path);
+      });
+    });
+  }
+  connect(layerNodes('input'),  layerNodes('h1'), 0.5);
+  connect(layerNodes('h1'),     layerNodes('h2'), 0.55);
+  connect(layerNodes('h2'),     layerNodes('h3'), 0.55);
+  connect(layerNodes('h3'),     layerNodes('output'), 1);
+  // a few skip connections
+  connect(layerNodes('input'),  layerNodes('h2'), 0.12);
+  connect(layerNodes('h1'),     layerNodes('h3'), 0.12);
+}
+
+/* ════════════════════════════════════════════════════════════
+   INTERACTION — drag-orbit, zoom, click, keyboard
+═════════════════════════════════════════════════════════════ */
+let drag = null;
+stage.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('.node, .panel, .hud, .welcome')) return;
+  drag = { sx: e.clientX, sy: e.clientY, rx: cam.rx, ry: cam.ry };
+  stage.classList.add('dragging');
+  snap = false;
+});
+window.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  cam.ry = drag.ry + (e.clientX - drag.sx) * 0.4;
+  cam.rx = Math.max(-80, Math.min(80, drag.rx - (e.clientY - drag.sy) * 0.35));
+  applyCam();
+});
+window.addEventListener('pointerup', () => { drag = null; stage.classList.remove('dragging'); });
+
+stage.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const dz = -e.deltaY * 0.0012;
+  cam.scale = Math.max(0.4, Math.min(1.6, cam.scale + dz));
+  snap = false;
+  applyCam();
+}, { passive: false });
+
+document.getElementById('resetView').addEventListener('click', () => {
+  cam = { rx: -8, ry: 22, scale: 0.78, panX: 0, panY: 0 };
+  snap = true; applyCam();
+});
+
+/* ════════════════════════════════════════════════════════════
+   PANEL
+═════════════════════════════════════════════════════════════ */
+const panel = document.getElementById('panel');
+const pLayer = document.getElementById('pLayer');
+const pTitle = document.getElementById('pTitle');
+const pBody = document.getElementById('pBody');
+const pIdx = document.getElementById('pIdx');
+const pPrev = document.getElementById('pPrev');
+const pNext = document.getElementById('pNext');
+const pClose = document.getElementById('pClose');
+let activeId = null;
+
+function focusNode(id){
+  const n = NODES.find(x => x.id === id); if (!n) return;
+  const p = nodePos(n);
+  // Camera flies so node is centered (account for panel on the right ~ 200px)
+  cam.panX = -p.x - 200;
+  cam.panY = -p.y - 30;
+  cam.scale = 1.1;
+  cam.ry = 8 + p.x * 0.012;
+  cam.rx = -4 + p.y * 0.01;
+  snap = true;
+  applyCam();
+  setTimeout(() => { snap = false; }, 1200);
+}
+
+function highlightWires(id){
+  wireSvg.querySelectorAll('path').forEach(p => {
+    if (!id) { p.classList.remove('active','dim'); return; }
+    if (p.dataset.from === id || p.dataset.to === id) {
+      p.classList.add('active'); p.classList.remove('dim');
+      p.parentNode.appendChild(p); // bring to front
+    } else { p.classList.add('dim'); p.classList.remove('active'); }
+  });
+}
+
+function openNode(id){
+  const n = NODES.find(x => x.id === id); if (!n) return;
+  const d = DETAIL[id]; if (!d) return;
+  const layer = LAYERS.find(l => l.id === n.layer);
+  if (activeId) elById[activeId]?.classList.remove('active');
+  activeId = id;
+  elById[id].classList.add('active');
+  elById[id].classList.add('visited');
+  visited.add(id);
+  document.getElementById('visitCount').textContent = `${visited.size} / ${NODES.length} visited`;
+  updateMinimap();
+
+  panel.style.setProperty('--c', layer.color);
+  pLayer.textContent = layer.id === 'input' ? 'INPUT' : layer.id === 'output' ? 'OUTPUT' : 'HIDDEN ' + layer.id.slice(1);
+  pLayer.style.setProperty('--c', layer.color);
+  pLayer.style.color = layer.color;
+  pLayer.style.borderColor = layer.color;
+  pTitle.textContent = n.label;
+  let html = '';
+  if (d.meta) {
+    Object.entries(d.meta).forEach(([k,v]) => { html += `<div class="meta-row"><span class="k">${k}</span><span class="v">${v}</span></div>`; });
+  }
+  html += d.body;
+  if (d.tags?.length) html += `<div class="comment">tags</div><div class="tags">${d.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>`;
+  if (d.links?.length) html += `<div class="links">${d.links.map(([t,h]) => `<a href="${h}" target="_blank" rel="noopener">${t}</a>`).join('')}</div>`;
+  pBody.innerHTML = html;
+
+  const idx = NODES.findIndex(x => x.id === id);
+  pIdx.textContent = `${(idx+1).toString().padStart(2,'0')} / ${NODES.length}`;
+  panel.classList.add('open');
+
+  focusNode(id);
+  highlightWires(id);
+}
+
+function closeNode(){
+  panel.classList.remove('open');
+  if (activeId) elById[activeId]?.classList.remove('active');
+  activeId = null;
+  highlightWires(null);
+  cam = { rx: -8, ry: 22, scale: 0.78, panX: 0, panY: 0 };
+  snap = true; applyCam();
+}
+
+pClose.addEventListener('click', closeNode);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeNode();
+  else if (e.key === 'Tab' || e.key === 'ArrowRight') { e.preventDefault(); stepNode(1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); stepNode(-1); }
+  else if (e.key === ' ' && document.getElementById('welcome').classList.contains('gone')) { e.preventDefault(); togglePlay(); }
+});
+
+function stepNode(dir){
+  const idx = activeId ? NODES.findIndex(x => x.id === activeId) : -1;
+  const next = (idx + dir + NODES.length) % NODES.length;
+  openNode(NODES[next].id);
+}
+pPrev.addEventListener('click', () => stepNode(-1));
+pNext.addEventListener('click', () => stepNode(1));
+
+/* close panel on background click */
+stage.addEventListener('click', (e) => {
+  if (e.target.closest('.node, .hud')) return;
+  if (panel.classList.contains('open')) closeNode();
+});
+
+/* ════════════════════════════════════════════════════════════
+   MINIMAP
+═════════════════════════════════════════════════════════════ */
+const mm = document.getElementById('minimapSvg');
+function renderMinimap(){
+  mm.innerHTML = '';
+  // map world coords (-560..660, -300..340) → 0..220, 0..86
+  NODES.forEach(n => {
+    const p = nodePos(n);
+    const mx = ((p.x + 700) / 1400) * 220;
+    const my = ((p.y + 360) / 720) * 86;
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', mx); c.setAttribute('cy', my); c.setAttribute('r', n.layer === 'output' ? 3 : 2);
+    c.setAttribute('class', 'mm-node'); c.dataset.id = n.id;
+    c.style.fill = visited.has(n.id) ? '#ff3d8a' : '#2b3146';
+    c.addEventListener('click', () => openNode(n.id));
+    mm.appendChild(c);
+  });
+}
+function updateMinimap(){
+  mm.querySelectorAll('.mm-node').forEach(c => {
+    c.style.fill = visited.has(c.dataset.id) ? '#ff3d8a' : '#2b3146';
+    c.classList.toggle('active', c.dataset.id === activeId);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   AUDIO TRANSPORT
+═════════════════════════════════════════════════════════════ */
+const audio = document.getElementById('audio');
+const playBtn = document.getElementById('playBtn');
+const wave = document.getElementById('wave');
+const waveBase = document.getElementById('waveBase');
+const waveProg = document.getElementById('waveProg');
+const timeDisp = document.getElementById('timeDisp');
+
+// build waveform bars
+const SEED = [4,10,14,20,12,24,6,18,28,14,20,10,16,24,12,6,18,14,26,10,20,14,6,22,12,16,28,10,20,14,6,26,12,18,10,22,32,14,20,10,6,24,14,18,10,20,6,26,14,10,20,6,24,14,18,10,20,6,4];
+let wbars = '';
+SEED.forEach((h, i) => { wbars += `<rect x="${i*4}" y="${(24-h)/2}" width="2" height="${h}" rx="1"/>`; });
+waveBase.innerHTML = wbars; waveProg.innerHTML = wbars;
+
+function fmt(s){ if (!isFinite(s)) return '0:00'; const m=Math.floor(s/60); const ss=Math.floor(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
+function togglePlay(){
+  if (audio.paused) { audio.play(); playBtn.textContent='❚❚'; }
+  else { audio.pause(); playBtn.textContent='▶'; }
+}
+playBtn.addEventListener('click', togglePlay);
+audio.addEventListener('timeupdate', () => {
+  const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+  waveProg.parentElement.style.setProperty('--p', `${100-pct}%`);
+  timeDisp.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration||0);
+});
+audio.addEventListener('loadedmetadata', () => { timeDisp.textContent = '0:00 / ' + fmt(audio.duration); });
+audio.addEventListener('ended', () => { playBtn.textContent='▶'; });
+wave.addEventListener('click', (e) => {
+  const r = wave.getBoundingClientRect();
+  const pct = (e.clientX - r.left) / r.width;
+  if (audio.duration) audio.currentTime = pct * audio.duration;
+});
+
+/* ════════════════════════════════════════════════════════════
+   FORWARD PASS — signal cascade input → output
+═════════════════════════════════════════════════════════════ */
+const fpBtn = document.getElementById('fpBtn');
+const fpBanner = document.getElementById('fpBanner');
+const fpStage = document.getElementById('fpStage');
+let fpRunning = false;
+
+function projectScreen(n) {
+  const W = window.innerWidth, H = window.innerHeight;
+  const p = nodePos(n);
+  return { x: W/2 + p.x, y: H/2 + p.y };
+}
+
+function firePulse(fromNode, toNode, color, durMs) {
+  return new Promise(resolve => {
+    const A = projectScreen(fromNode), B = projectScreen(toNode);
+    const cx = (A.x + B.x) / 2;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${A.x} ${A.y} C ${cx} ${A.y}, ${cx} ${B.y}, ${B.x} ${B.y}`);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width','1.4');
+    path.setAttribute('opacity','0.8');
+    path.style.filter = 'drop-shadow(0 0 4px ' + color + ')';
+    wireSvg.appendChild(path);
+
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('r','3.5');
+    dot.setAttribute('class','pulse-dot');
+    dot.setAttribute('fill', color);
+    wireSvg.appendChild(dot);
+
+    const len = path.getTotalLength();
+    const t0 = performance.now();
+    function step(now){
+      const k = Math.min(1, (now - t0) / durMs);
+      const pt = path.getPointAtLength(len * k);
+      dot.setAttribute('cx', pt.x);
+      dot.setAttribute('cy', pt.y);
+      path.setAttribute('opacity', String(0.8 * (1 - k * 0.6)));
+      if (k < 1) requestAnimationFrame(step);
+      else {
+        // fade out trail
+        let o = 0.5;
+        const fade = () => {
+          o -= 0.04;
+          path.setAttribute('opacity', String(Math.max(0, o)));
+          dot.setAttribute('opacity', String(Math.max(0, o)));
+          if (o > 0) requestAnimationFrame(fade);
+          else { path.remove(); dot.remove(); }
+        };
+        requestAnimationFrame(fade);
+        resolve();
+      }
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+function fireNode(id) {
+  const el = elById[id]; if (!el) return;
+  el.classList.remove('firing'); void el.offsetWidth; // restart anim
+  el.classList.add('firing');
+  setTimeout(() => el.classList.remove('firing'), 700);
+}
+
+function setBanner(text, sub){
+  fpBanner.classList.add('on');
+  fpBanner.firstChild.textContent = text;
+  fpStage.textContent = '// ' + sub;
+}
+
+async function runForwardPass(){
+  if (fpRunning) return;
+  fpRunning = true;
+  fpBtn.disabled = true;
+  closeNode();
+  // reset camera to wide view
+  cam = { rx: -8, ry: 22, scale: 0.7, panX: 0, panY: 0 };
+  snap = true; applyCam();
+  setTimeout(() => { snap = false; }, 600);
+
+  setBanner('forward pass', 'initializing');
+  await wait(700);
+
+  const layerOrder = ['input','h1','h2','h3','output'];
+  const stageNames = {
+    input: 'reading core skills',
+    h1: 'activating projects',
+    h2: 'propagating through research & systems',
+    h3: 'weighting experience',
+    output: 'producing output',
+  };
+
+  // 1. fire all input nodes
+  setBanner('layer 0', stageNames.input);
+  NODES.filter(n => n.layer === 'input').forEach((n, i) => {
+    setTimeout(() => fireNode(n.id), i * 80);
+  });
+  await wait(900);
+
+  // 2. cascade through hidden layers
+  for (let li = 0; li < layerOrder.length - 1; li++) {
+    const from = NODES.filter(n => n.layer === layerOrder[li]);
+    const to = NODES.filter(n => n.layer === layerOrder[li+1]);
+    const toLayer = LAYERS.find(l => l.id === layerOrder[li+1]);
+    setBanner('layer ' + (li+1), stageNames[layerOrder[li+1]]);
+
+    // fire pulses (sample) and then fire each target node
+    const pulses = [];
+    from.forEach(a => {
+      // each from-node sends to ~2 random targets
+      const sample = to.slice().sort(() => Math.random() - 0.5).slice(0, Math.min(2, to.length));
+      sample.forEach(b => {
+        pulses.push(firePulse(a, b, toLayer.color, 700));
+      });
+    });
+    // when ~mid-flight, fire target nodes
+    setTimeout(() => to.forEach((n, i) => setTimeout(() => fireNode(n.id), i * 60)), 500);
+    await Promise.all(pulses);
+    await wait(250);
+  }
+
+  // 3. final output flash + reveal
+  setBanner('output', 'ethan kennedy');
+  await wait(800);
+  fpBanner.classList.remove('on');
+  await wait(300);
+  openNode('out');
+
+  fpRunning = false;
+  fpBtn.disabled = false;
+}
+function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+fpBtn.addEventListener('click', runForwardPass);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'f' || e.key === 'F') { if (!e.target.closest('input,textarea')) runForwardPass(); }
+});
+
+/* ════════════════════════════════════════════════════════════
+   AUTO-TOUR
+═════════════════════════════════════════════════════════════ */
+let tourTimer = null;
+function startTour(){
+  stopTour();
+  let i = 0;
+  const order = NODES.map(n => n.id);
+  const step = () => {
+    openNode(order[i % order.length]);
+    i++;
+    tourTimer = setTimeout(step, 4500);
+  };
+  step();
+}
+function stopTour(){ if (tourTimer) { clearTimeout(tourTimer); tourTimer = null; } }
+document.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('.node, .panel, .hud, .welcome')) return;
+  stopTour();
+});
+
+/* ════════════════════════════════════════════════════════════
+   WELCOME
+═════════════════════════════════════════════════════════════ */
+const welcome = document.getElementById('welcome');
+document.getElementById('enterBtn').addEventListener('click', () => {
+  welcome.classList.add('gone');
+  audio.play().then(()=>{ playBtn.textContent='❚❚'; }).catch(()=>{});
+});
+document.getElementById('tourBtn').addEventListener('click', () => {
+  welcome.classList.add('gone');
+  audio.play().then(()=>{ playBtn.textContent='❚❚'; }).catch(()=>{});
+  setTimeout(startTour, 800);
+});
+document.getElementById('fpStartBtn').addEventListener('click', () => {
+  welcome.classList.add('gone');
+  audio.play().then(()=>{ playBtn.textContent='❚❚'; }).catch(()=>{});
+  setTimeout(runForwardPass, 700);
+});
+
+/* ════════════════════════════════════════════════════════════
+   INIT
+═════════════════════════════════════════════════════════════ */
+renderNodes();
+renderWires();
+renderMinimap();
+applyCam();
+window.addEventListener('resize', renderWires);
+
+/* idle camera drift */
+let t = 0;
+function idle(){
+  if (!drag && !panel.classList.contains('open') && !fpRunning) {
+    t += 0.0006;
+    cam.ry = cam.ry * 0.995 + (22 + Math.sin(t) * 6) * 0.005;
+    cam.rx = cam.rx * 0.995 + (-8 + Math.cos(t*0.7) * 3) * 0.005;
+    applyCam();
+  }
+  requestAnimationFrame(idle);
+}
+idle();
+</script>
+
+</body>
+</html>
