@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   *,*::before,*::after { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #08090d; color: #c7ccdb; font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100%; }
+  html, body { margin: 0; padding: 0; background: #08090d; color: #c7ccdb; font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100%; overscroll-behavior: none; }
   a { color: inherit; }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -20,7 +20,7 @@
   @keyframes float-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
   /* ───────── stage ───────── */
-  #stage { position: fixed; inset: 0; perspective: 1400px; perspective-origin: 50% 45%; overflow: hidden; cursor: grab; }
+  #stage { position: fixed; inset: 0; perspective: 1400px; perspective-origin: 50% 45%; overflow: hidden; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
   #stage.dragging { cursor: grabbing; }
   #stage::before { content:''; position:absolute; inset:0;
     background-image:
@@ -214,14 +214,35 @@
   @media (max-width: 760px) {
     .hud-tl { top: 12px; left: 12px; }
     .hud-tl .name { font-size: 16px; }
-    .hud-tr { top: 12px; right: 12px; }
+    .hud-tl .meta { display: none; }
+    .hud-tr { top: 12px; right: 12px; gap: 4px; }
+    .hud-tr .hud-row { flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+    .hud-link { padding: 5px 8px; font-size: 9px; }
+    .fp-btn { padding: 6px 9px; font-size: 10px; }
+    #resetView { display: none; }
     .hud-bl { display: none; }
     .hud-bc { width: calc(100vw - 24px); left: 50%; bottom: 12px; }
+    .hud-bc .transport { padding: 8px 10px; gap: 8px; }
+    .hud-bc .transport .meta .t { font-size: 10px; }
+    .hud-bc .transport .time { min-width: 56px; font-size: 9px; }
     .hud-br { display: none; }
-    .panel { width: calc(100vw - 24px); top: 70px; max-height: 50vh; }
-    .welcome-card { padding: 22px; }
-    .welcome-card .h { font-size: 24px; }
-    .welcome-card .keys { grid-template-columns: 1fr; }
+    .panel { width: calc(100vw - 24px); top: 70px; max-height: calc(100vh - 200px); }
+    .welcome { padding: 16px; overflow-y: auto; }
+    .welcome-card { padding: 20px; width: 100%; max-width: 100%; min-width: 0; }
+    .welcome-card .h { font-size: 20px; overflow-wrap: anywhere; }
+    .welcome-card .sub { font-size: 12px; }
+    .welcome-card .body { font-size: 11px; line-height: 1.6; }
+    .welcome-card .keys { grid-template-columns: 1fr; gap: 4px; }
+    .welcome-card .keys .row { font-size: 10px; }
+    .welcome-card .start { gap: 8px; }
+    .btn-primary, .btn-ghost { padding: 9px 12px; font-size: 11px; }
+    .boot { display: none; }
+    .fp-banner { font-size: 18px; padding: 10px 18px; }
+  }
+  @media (pointer: coarse) {
+    .node-dot { width: 18px; height: 18px; }
+    .node.input .node-dot { width: 14px; height: 14px; }
+    .node.output .node-dot { width: 26px; height: 26px; }
   }
 </style>
 </head>
@@ -440,7 +461,11 @@ const stage = document.getElementById('stage');
 const wireSvg = document.getElementById('wireSvg');
 const visited = new Set();
 
-let cam = { rx: -8, ry: 22, scale: 0.78, panX: 0, panY: 0 };
+function defaultScale(){
+  // Fit the world's ~1400px-wide layout into the viewport with margin.
+  return Math.max(0.30, Math.min(0.78, window.innerWidth / 1500));
+}
+let cam = { rx: -8, ry: 22, scale: defaultScale(), panX: 0, panY: 0 };
 let snap = false;
 
 function applyCam(){
@@ -529,30 +554,60 @@ function renderWires(){
    INTERACTION — drag-orbit, zoom, click, keyboard
 ═════════════════════════════════════════════════════════════ */
 let drag = null;
+const pointers = new Map();   // pointerId -> {x, y}
+let pinch = null;             // { startDist, startScale }
+function pinchDistance(){
+  const pts = [...pointers.values()];
+  if (pts.length < 2) return 0;
+  const [a, b] = pts;
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
 stage.addEventListener('pointerdown', (e) => {
   if (e.target.closest('.node, .panel, .hud, .welcome')) return;
-  drag = { sx: e.clientX, sy: e.clientY, rx: cam.rx, ry: cam.ry };
-  stage.classList.add('dragging');
-  snap = false;
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size >= 2) {
+    drag = null;
+    pinch = { startDist: pinchDistance(), startScale: cam.scale };
+  } else {
+    drag = { sx: e.clientX, sy: e.clientY, rx: cam.rx, ry: cam.ry };
+    stage.classList.add('dragging');
+    snap = false;
+  }
 });
 window.addEventListener('pointermove', (e) => {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && pointers.size >= 2) {
+    const dist = pinchDistance();
+    if (pinch.startDist > 0) {
+      cam.scale = Math.max(0.2, Math.min(1.8, pinch.startScale * (dist / pinch.startDist)));
+      snap = false;
+      applyCam();
+    }
+    return;
+  }
   if (!drag) return;
   cam.ry = drag.ry + (e.clientX - drag.sx) * 0.4;
   cam.rx = Math.max(-80, Math.min(80, drag.rx - (e.clientY - drag.sy) * 0.35));
   applyCam();
 });
-window.addEventListener('pointerup', () => { drag = null; stage.classList.remove('dragging'); });
+function endPointer(e){
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinch = null;
+  if (pointers.size === 0) { drag = null; stage.classList.remove('dragging'); }
+}
+window.addEventListener('pointerup', endPointer);
+window.addEventListener('pointercancel', endPointer);
 
 stage.addEventListener('wheel', (e) => {
   e.preventDefault();
   const dz = -e.deltaY * 0.0012;
-  cam.scale = Math.max(0.4, Math.min(1.6, cam.scale + dz));
+  cam.scale = Math.max(0.2, Math.min(1.8, cam.scale + dz));
   snap = false;
   applyCam();
 }, { passive: false });
 
 document.getElementById('resetView').addEventListener('click', () => {
-  cam = { rx: -8, ry: 22, scale: 0.78, panX: 0, panY: 0 };
+  cam = { rx: -8, ry: 22, scale: defaultScale(), panX: 0, panY: 0 };
   snap = true; applyCam();
 });
 
@@ -633,7 +688,7 @@ function closeNode(){
   if (activeId) elById[activeId]?.classList.remove('active');
   activeId = null;
   highlightWires(null);
-  cam = { rx: -8, ry: 22, scale: 0.78, panX: 0, panY: 0 };
+  cam = { rx: -8, ry: 22, scale: defaultScale(), panX: 0, panY: 0 };
   snap = true; applyCam();
 }
 
@@ -799,7 +854,7 @@ async function runForwardPass(){
   fpBtn.disabled = true;
   closeNode();
   // reset camera to wide view
-  cam = { rx: -8, ry: 22, scale: 0.7, panX: 0, panY: 0 };
+  cam = { rx: -8, ry: 22, scale: Math.min(defaultScale(), 0.7), panX: 0, panY: 0 };
   snap = true; applyCam();
   setTimeout(() => { snap = false; }, 600);
 
