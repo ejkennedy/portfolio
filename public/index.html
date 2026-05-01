@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   *,*::before,*::after { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #08090d; color: #c7ccdb; font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100%; overscroll-behavior: none; }
+  html, body { margin: 0; padding: 0; background: #08090d; color: #c7ccdb; font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100%; }
   a { color: inherit; }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -20,7 +20,7 @@
   @keyframes float-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
   /* ───────── stage ───────── */
-  #stage { position: fixed; inset: 0; perspective: 1400px; perspective-origin: 50% 45%; overflow: hidden; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+  #stage { position: fixed; inset: 0; perspective: 1400px; perspective-origin: 50% 45%; overflow: hidden; cursor: grab; }
   #stage.dragging { cursor: grabbing; }
   #stage::before { content:''; position:absolute; inset:0;
     background-image:
@@ -238,8 +238,13 @@
     .btn-primary, .btn-ghost { padding: 9px 12px; font-size: 11px; }
     .boot { display: none; }
     .fp-banner { font-size: 18px; padding: 10px 18px; }
+    /* mobile: flatten the 3D stage so swipe-pan reads as 2D sliding rather than perspective tilt */
+    #stage { perspective: none; cursor: default; }
+    #stage.dragging { cursor: default; }
   }
   @media (pointer: coarse) {
+    html, body { overscroll-behavior: none; }
+    #stage { touch-action: none; -webkit-user-select: none; user-select: none; }
     .node-dot { width: 18px; height: 18px; }
     .node.input .node-dot { width: 14px; height: 14px; }
     .node.output .node-dot { width: 26px; height: 26px; }
@@ -336,8 +341,8 @@
     <span class="kicker">welcome.exe loaded</span>
     <h1 class="h">forward-pass through<br>my <span class="a">network<span style="animation:blink 1s steps(2) infinite">_</span></span></h1>
     <p class="sub">5+ years across applied ML, LLM systems, and generative audio.</p>
-    <p class="body">this isn't a normal portfolio. it's a 3D <span class="a">neural network</span> — the input layer is what i work with, the hidden layers are what i've actually shipped, and the output is just me. orbit it freely in 3D, click any node to inspect. the score playing throughout is "psycho princess" — i wrote, played and recorded it.</p>
-    <div class="keys">
+    <p class="body" id="welcomeBody">this isn't a normal portfolio. it's a 3D <span class="a">neural network</span> — the input layer is what i work with, the hidden layers are what i've actually shipped, and the output is just me. orbit it freely in 3D, click any node to inspect. the score playing throughout is "psycho princess" — i wrote, played and recorded it.</p>
+    <div class="keys" id="welcomeKeys">
       <div class="row"><span>orbit network</span><kbd>drag</kbd></div>
       <div class="row"><span>zoom in / out</span><kbd>scroll</kbd></div>
       <div class="row"><span>inspect node</span><kbd>click</kbd></div>
@@ -374,14 +379,19 @@ const LAYERS = [
 /* node positions: y/z scattered for organic 3D layout. label sides alternate. */
 const NODES = [
   // ───── INPUT LAYER · core skills ─────
-  { id:'sk-py',     layer:'input', label:'Python',          y:-220, z: -80 },
-  { id:'sk-ts',     layer:'input', label:'TypeScript',      y:-130, z:  60 },
-  { id:'sk-go',     layer:'input', label:'Go · Lua · C++',  y: -40, z:-140 },
-  { id:'sk-ml',     layer:'input', label:'PyTorch · DL',    y:  60, z:  40 },
-  { id:'sk-llm',    layer:'input', label:'LLM eng · agents',y: 150, z:-100 },
-  { id:'sk-dsp',    layer:'input', label:'JUCE · DSP · MIDI',y: 230, z: 80 },
-  { id:'sk-cf',     layer:'input', label:'Cloudflare edge', y: -300, z: 110 },
-  { id:'sk-ml-ops', layer:'input', label:'MLOps · Ray · ONNX',y: 320, z:-50 },
+  { id:'sk-langs',    layer:'input', label:'Languages',             y:-340, z: -60 },
+  { id:'sk-ml',       layer:'input', label:'Machine Learning',      y:-280, z:  90 },
+  { id:'sk-dl',       layer:'input', label:'Deep Learning',         y:-220, z:-130 },
+  { id:'sk-ai-eng',   layer:'input', label:'AI Engineering',        y:-160, z:  50 },
+  { id:'sk-audio-ml', layer:'input', label:'ML Audio Generation',   y:-100, z:-110 },
+  { id:'sk-web',      layer:'input', label:'Full-stack Web',        y: -40, z:  80 },
+  { id:'sk-mobile',   layer:'input', label:'Mobile Dev',            y:  20, z: -60 },
+  { id:'sk-cloud',    layer:'input', label:'Cloud Systems',         y:  80, z: 100 },
+  { id:'sk-mlops',    layer:'input', label:'MLOps · Inference',     y: 140, z: -90 },
+  { id:'sk-music',    layer:'input', label:'Music Production',      y: 200, z:  60 },
+  { id:'sk-orch',     layer:'input', label:'Orchestral Mockups',    y: 260, z:-100 },
+  { id:'sk-instr',    layer:'input', label:'Piano · Guitar',        y: 320, z:  70 },
+  { id:'sk-voice',    layer:'input', label:'Voice Acting',          y: 380, z: -60 },
 
   // ───── HIDDEN 1 · projects (the core of the portfolio) ─────
   { id:'p-llm',     layer:'h1', label:'LLM Inference Platform', y:-280, z:  60 },
@@ -401,7 +411,7 @@ const NODES = [
   { id:'r-eval',    layer:'h2', label:'Prompt registry · evals',   y: 340, z:  70 },
 
   // ───── HIDDEN 3 · experience / education ─────
-  { id:'e-cont',  layer:'h3', label:'Continuata — Full-stack dev',     y:-240, z:  60 },
+  { id:'e-cont',  layer:'h3', label:'Continuata — Fullstack Engineer', y:-240, z:  60 },
   { id:'e-coach', layer:'h3', label:'Glasgow — SE Team Coach (JPM)',   y:-100, z: -80 },
   { id:'e-free',  layer:'h3', label:'Freelance · 50+ clients',         y:  40, z:  90 },
   { id:'e-tree',  layer:'h3', label:'TM Trees — tree surgeon (1+ yr)', y: 180, z: -50 },
@@ -414,15 +424,20 @@ const NODES = [
 
 /* ── node detail content (rich; opens in panel) ─────────── */
 const DETAIL = {
-  // skills
-  'sk-py':  { kind:'skill', tags:['Python','FastAPI','Django','Flask','PyTorch'], body:`<p>primary research & backend language. used across ML training, scientific computing, scripting, and production APIs (Continuata, freelance).</p>`},
-  'sk-ts':  { kind:'skill', tags:['TypeScript','Hono','Bun','Drizzle'], body:`<p>day-to-day language for shipped product code. Hono on Cloudflare Workers, Bun for tooling, Drizzle for SQL.</p>`},
-  'sk-go':  { kind:'skill', tags:['Go','Lua','C++','C','Java','Bash'], body:`<p>secondary languages by use-case: <span class="a">Lua</span> for ReaScript automation in A.R.I.A., <span class="a">C++</span> for the dissertation VST plugin, Go and Java for backend & coursework.</p>`},
-  'sk-ml': { kind:'skill', tags:['PyTorch','TensorFlow','GANs','Diffusion','Differentiable DSP'], body:`<p>deep-learning: GANs (dissertation), diffusion sketches for audio, and differentiable-DSP-style approaches for parameter-efficient generative models. honours research lives here.</p>`},
-  'sk-llm':{ kind:'skill', tags:['Claude SDK','OpenAI','Gemini','Tool use','Pipecat','AI Gateway'], body:`<p>LLM-product engineering: agents with tool use, prompt registries, evals, AI Gateway routing, normalized SSE streaming.</p>`},
-  'sk-dsp':{ kind:'skill', tags:['JUCE','C++','MIDI','Synthesis','Reaper / ReaScript'], body:`<p>real-time audio: JUCE/C++ VSTs, MIDI parsing, physical-modelling synthesis, ReaScript Lua surfaces. the bridge from research to a producer pressing a button.</p>`},
-  'sk-cf': { kind:'skill', tags:['Cloudflare Workers','D1','R2','Durable Objects','Terraform'], body:`<p>Cloudflare-native shipping: Workers, D1, R2, Durable Objects for rate limiting + budget enforcement, Terraform IaC, multi-env CD with smoke tests.</p>`},
-  'sk-ml-ops':{ kind:'skill', tags:['Ray Serve','ONNX Runtime','MLflow','Feast','Evidently','PyFlink'], body:`<p>online ML infrastructure: Ray Serve + ONNX, MLflow shadow deployment & rollback, Evidently drift, Feast/Redis online store, PyFlink streaming features.</p>`},
+  // skills (INPUT)
+  'sk-langs':    { kind:'skill', tags:['Python','TypeScript','Go','Lua','C++','C','Java','Bash'], body:`<p>cross-language toolbelt picked for the job. <span class="a">Python</span> for ML research and backend APIs, <span class="a">TypeScript</span> for shipped product code, <span class="a">C++</span> for the dissertation VST plugin, <span class="a">Lua</span> for ReaScript automation in A.R.I.A., Go / Java / C / Bash for backend, coursework, and tooling glue.</p>` },
+  'sk-ml':       { kind:'skill', tags:['PyTorch','TensorFlow','training pipelines','evaluation','classical ML'], body:`<p>applied machine learning end to end: data prep, training loops, evaluation, packaging. comfortable with PyTorch and TensorFlow across audio and tabular domains, including supervised, self-supervised, and online-learning patterns.</p>` },
+  'sk-dl':       { kind:'skill', tags:['GANs','Diffusion','Transformers','PyTorch','training tricks'], body:`<p>deep-learning research and engineering. GAN architectures (honours dissertation), diffusion sketches for audio, transformer fine-tuning, and the training-stability tricks that actually matter when a model has to converge on real data.</p>` },
+  'sk-ai-eng':   { kind:'skill', tags:['Claude SDK','OpenAI','Gemini','agents','tool use','prompt registries','evals','AI Gateway'], body:`<p>turning LLMs into <span class="a">products that survive</span>. agents with tool use, normalized SSE streaming, versioned prompt registries with eval harnesses, AI Gateway routing, token / budget enforcement, regression checks before prompt rollouts.</p>` },
+  'sk-audio-ml': { kind:'skill', tags:['neural synthesis','GANs for audio','differentiable DSP','MIDI conditioning','VST inference'], body:`<p>generative audio research → real-time inference inside a DAW. GAN architectures for symbolic-to-audio synthesis, differentiable DSP, neural synthesis with MIDI conditioning, packaging trained models inside loadable plugins.</p>` },
+  'sk-web':      { kind:'skill', tags:['Hono','HTMX','Tailwind','daisyUI','FastAPI','Bun','Drizzle','Django','Flask'], body:`<p>full-stack web — one head, frontend and backend. Hono on Cloudflare Workers, HTMX-driven interactivity, Tailwind / daisyUI design systems, FastAPI / Django / Flask for Python services, Drizzle ORM, Bun-native tooling.</p>` },
+  'sk-mobile':   { kind:'skill', tags:['Flutter','Dart','iOS / Android','Claude SDK on mobile'], body:`<p>cross-platform mobile via Flutter / Dart — single codebase for iOS + Android. comfortable wiring native AI APIs (Claude SDK) into mobile UX with reactive UIs and offline-friendly state.</p>` },
+  'sk-cloud':    { kind:'skill', tags:['Cloudflare Workers','D1','R2','Durable Objects','Terraform','Docker','Kubernetes','Helm'], body:`<p>cloud-native shipping. Cloudflare-first (Workers, D1, R2, Durable Objects for stateful primitives), Docker / Kubernetes / Helm where the team is on AWS or GCP, Terraform IaC, multi-environment CD with smoke tests.</p>` },
+  'sk-mlops':    { kind:'skill', tags:['Ray Serve','ONNX Runtime','MLflow','Feast','Evidently','PyFlink','Redpanda'], body:`<p>online ML infrastructure: Ray Serve + ONNX Runtime with pre-warmed session pools, MLflow registry with shadow deployment + rollback, Evidently drift detection, Feast / Redis online feature store, PyFlink streaming features.</p>` },
+  'sk-music':    { kind:'skill', tags:['recording','mixing','mastering','songwriting','arrangement','Reaper'], body:`<p>music production from idea to master inside Reaper — tracking, comping, mixing, mastering. wrote, played and produced "Psycho Princess" (the score on this site) and a deep catalogue of original tracks.</p>` },
+  'sk-orch':     { kind:'skill', tags:['orchestration','MIDI mockups','sample libraries','virtual instruments','arranging'], body:`<p>orchestral mockups: MIDI realisations using sample libraries and virtual instruments. arranging, voicing for sections, articulation programming — the bridge between paper score and a recorded-sounding mockup.</p>` },
+  'sk-instr':    { kind:'skill', tags:['piano','guitar','live performance','accompanist'], body:`<p>multi-instrumentalist. <span class="a">piano</span> as the long-term primary instrument, <span class="a">guitar</span> alongside — comfortable as performer, accompanist, or arranger.</p>` },
+  'sk-voice':    { kind:'skill', tags:['voice acting','recording','character voices','session technique'], body:`<p>trained voice actor (course with Laci Morgan, 2023). character voices, session-friendly mic technique, takes / direction adjustments, recording and editing my own sessions.</p>` },
 
   // projects (HIDDEN 1)
   'p-llm':  { kind:'project', meta:{stack:'TypeScript · Cloudflare · SSE · Durable Objects · Terraform · Grafana', focus:'edge LLM gateway · per-user budgets'}, body:`<p>production-oriented edge LLM gateway on Cloudflare Workers. authenticated chat (JWT/JWKS), router-based model selection, AI Gateway routing, normalized SSE streaming, Workers AI / external-provider fallback.</p><ul><li>Durable Object rate limiting + budget enforcement</li><li>Versioned prompt registry with evals</li><li>Analytics Engine cost / latency surfaced via Prometheus + Grafana</li><li>Terraform IaC, multi-env CD with scheduled prod smoke tests</li></ul>`, tags:['Cloudflare Workers','TypeScript','SSE','Durable Objects','Terraform','Grafana'], links:[['github','https://github.com/ejkennedy/LLM-Inference-Platform']] },
@@ -442,7 +457,7 @@ const DETAIL = {
   'r-eval': { kind:'research', body:`<p>versioned prompt registry, eval harnesses, regression checks before prompt rollouts. small but boring infrastructure that makes LLM products survive.</p>`, tags:['prompt registry','evals'] },
 
   // experience (HIDDEN 3)
-  'e-cont':  { kind:'role', meta:{co:'Continuata Ltd · continuata.io', when:'Aug 2021 → present'}, body:`<p>Full-Stack Developer. delivery on the Continuata website and Conduct App across frontend & backend (Python, TypeScript, Hono, Cloudflare) in an Agile environment.</p><ul><li>shipped product features integrating proprietary models with third-party AI APIs (OpenAI, Claude, Gemini, ElevenLabs)</li><li>researched and prototyped AI methods for music & audio applications</li><li>built proof-of-concept AI-driven applications in Python with API-based architectures</li></ul>`, tags:['Python','TypeScript','Hono','Cloudflare','Claude / OpenAI / Gemini'] },
+  'e-cont':  { kind:'role', meta:{co:'Continuata Ltd · continuata.io', when:'Aug 2021 → present'}, body:`<p><span class="a">Fullstack Engineer</span>. delivery on the Continuata website and Conduct App across frontend & backend (Python, TypeScript, Hono, Cloudflare) in an Agile environment.</p><ul><li>shipped product features integrating proprietary models with third-party AI APIs (OpenAI, Claude, Gemini, ElevenLabs)</li><li>researched and prototyped AI methods for music & audio applications</li><li>built proof-of-concept AI-driven applications in Python with API-based architectures</li></ul>`, tags:['Python','TypeScript','Hono','Cloudflare','Claude / OpenAI / Gemini'] },
   'e-coach': { kind:'role', meta:{co:'University of Glasgow', when:'2025 → 2026'}, body:`<p>Software Development Team Coach. coached a third-year SE team through a full development lifecycle project.</p><ul><li>supported Agile practices, collaborative workflows, and adoption of new technologies</li><li>facilitated workshops following industry-led training delivered by JP Morgan engineers</li></ul>`, tags:['Agile coaching','team leadership','JP Morgan workshops'] },
   'e-free':  { kind:'role', meta:{co:'Independent', when:'2020 → present'}, body:`<p>delivered technical and creative projects for <span class="a">50+ clients</span>, managing requirements, deadlines, and long-term professional relationships independently. recent: TM Trees marketing site.</p>`, tags:['50+ clients','end-to-end delivery'] },
   'e-tree':  { kind:'role', meta:{co:'TM Trees', when:'1+ year (pre-CS)'}, body:`<p>worked as a <span class="a">tree surgeon</span> for over a year. chainsaws, climbing, rigging, ground crew. plan the cut twice, commit to it once — same instinct i bring to debugging a streaming pipeline.</p><p>later: came back as a freelance dev and <span class="a">built their entire website</span>.</p>`, tags:['climbing','rigging','ground crew','first aid'], links:[['↗ tmtrees.com','https://tmtrees.com']] },
@@ -461,11 +476,31 @@ const stage = document.getElementById('stage');
 const wireSvg = document.getElementById('wireSvg');
 const visited = new Set();
 
-function defaultScale(){
-  // Fit the world's ~1400px-wide layout into the viewport with margin.
-  return Math.max(0.30, Math.min(0.78, window.innerWidth / 1500));
+/* Touch devices get pan-only navigation, no rotation, flat 2D layout, and a
+   wider zoom range. Desktop keeps the original orbit / perspective design. */
+const IS_MOBILE = matchMedia('(pointer: coarse)').matches && window.innerWidth <= 900;
+if (IS_MOBILE) {
+  // Adapt the welcome copy + control hints for touch input.
+  const wb = document.getElementById('welcomeBody');
+  if (wb) wb.innerHTML = `this isn't a normal portfolio. it's a <span class="a">neural network</span> — the input layer is what i work with, the hidden layers are what i've actually shipped, and the output is just me. <span class="a">swipe</span> to slide across, <span class="a">pinch</span> to zoom, tap any node to inspect. the score playing throughout is "psycho princess" — i wrote, played and recorded it.`;
+  const wk = document.getElementById('welcomeKeys');
+  if (wk) wk.innerHTML = `
+    <div class="row"><span>slide across network</span><kbd>swipe</kbd></div>
+    <div class="row"><span>zoom in / out</span><kbd>pinch</kbd></div>
+    <div class="row"><span>inspect node</span><kbd>tap</kbd></div>
+    <div class="row"><span>back to grid</span><kbd>tap ✕</kbd></div>
+    <div class="row"><span>play / pause score</span><kbd>tap ▶</kbd></div>
+  `;
 }
-let cam = { rx: -8, ry: 22, scale: defaultScale(), panX: 0, panY: 0 };
+const MIN_SCALE = IS_MOBILE ? 0.10 : 0.4;
+const MAX_SCALE = 1.6;
+function defaultScale(){
+  if (IS_MOBILE) return Math.max(0.18, Math.min(0.45, window.innerWidth / 1700));
+  return 0.78;
+}
+function defaultRotation(){ return IS_MOBILE ? { rx: 0, ry: 0 } : { rx: -8, ry: 22 }; }
+const _dr = defaultRotation();
+let cam = { rx: _dr.rx, ry: _dr.ry, scale: defaultScale(), panX: 0, panY: 0 };
 let snap = false;
 
 function applyCam(){
@@ -541,12 +576,12 @@ function renderWires(){
       });
     });
   }
-  connect(layerNodes('input'),  layerNodes('h1'), 0.5);
+  connect(layerNodes('input'),  layerNodes('h1'), 0.32);
   connect(layerNodes('h1'),     layerNodes('h2'), 0.55);
   connect(layerNodes('h2'),     layerNodes('h3'), 0.55);
   connect(layerNodes('h3'),     layerNodes('output'), 1);
   // a few skip connections
-  connect(layerNodes('input'),  layerNodes('h2'), 0.12);
+  connect(layerNodes('input'),  layerNodes('h2'), 0.08);
   connect(layerNodes('h1'),     layerNodes('h3'), 0.12);
 }
 
@@ -569,7 +604,7 @@ stage.addEventListener('pointerdown', (e) => {
     drag = null;
     pinch = { startDist: pinchDistance(), startScale: cam.scale };
   } else {
-    drag = { sx: e.clientX, sy: e.clientY, rx: cam.rx, ry: cam.ry };
+    drag = { sx: e.clientX, sy: e.clientY, rx: cam.rx, ry: cam.ry, panX: cam.panX, panY: cam.panY };
     stage.classList.add('dragging');
     snap = false;
   }
@@ -579,15 +614,22 @@ window.addEventListener('pointermove', (e) => {
   if (pinch && pointers.size >= 2) {
     const dist = pinchDistance();
     if (pinch.startDist > 0) {
-      cam.scale = Math.max(0.2, Math.min(1.8, pinch.startScale * (dist / pinch.startDist)));
+      cam.scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, pinch.startScale * (dist / pinch.startDist)));
       snap = false;
       applyCam();
     }
     return;
   }
   if (!drag) return;
-  cam.ry = drag.ry + (e.clientX - drag.sx) * 0.4;
-  cam.rx = Math.max(-80, Math.min(80, drag.rx - (e.clientY - drag.sy) * 0.35));
+  if (IS_MOBILE) {
+    // Touch: drag pans the scene rather than rotating it.
+    cam.panX = drag.panX + (e.clientX - drag.sx);
+    cam.panY = drag.panY + (e.clientY - drag.sy);
+  } else {
+    // Desktop: drag orbits the network (original behavior).
+    cam.ry = drag.ry + (e.clientX - drag.sx) * 0.4;
+    cam.rx = Math.max(-80, Math.min(80, drag.rx - (e.clientY - drag.sy) * 0.35));
+  }
   applyCam();
 });
 function endPointer(e){
@@ -601,13 +643,14 @@ window.addEventListener('pointercancel', endPointer);
 stage.addEventListener('wheel', (e) => {
   e.preventDefault();
   const dz = -e.deltaY * 0.0012;
-  cam.scale = Math.max(0.2, Math.min(1.8, cam.scale + dz));
+  cam.scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, cam.scale + dz));
   snap = false;
   applyCam();
 }, { passive: false });
 
 document.getElementById('resetView').addEventListener('click', () => {
-  cam = { rx: -8, ry: 22, scale: defaultScale(), panX: 0, panY: 0 };
+  const r = defaultRotation();
+  cam = { rx: r.rx, ry: r.ry, scale: defaultScale(), panX: 0, panY: 0 };
   snap = true; applyCam();
 });
 
@@ -627,12 +670,20 @@ let activeId = null;
 function focusNode(id){
   const n = NODES.find(x => x.id === id); if (!n) return;
   const p = nodePos(n);
-  // Camera flies so node is centered (account for panel on the right ~ 200px)
-  cam.panX = -p.x - 200;
-  cam.panY = -p.y - 30;
-  cam.scale = 1.1;
-  cam.ry = 8 + p.x * 0.012;
-  cam.rx = -4 + p.y * 0.01;
+  if (IS_MOBILE) {
+    // Mobile: pan-only focus, panel covers the bottom half so shift node up.
+    cam.panX = -p.x;
+    cam.panY = -p.y - 100;
+    cam.scale = 0.55;
+    // rx / ry stay at 0 — flat layout
+  } else {
+    // Desktop: original camera-fly with rotation, panel on the right (~200px).
+    cam.panX = -p.x - 200;
+    cam.panY = -p.y - 30;
+    cam.scale = 1.1;
+    cam.ry = 8 + p.x * 0.012;
+    cam.rx = -4 + p.y * 0.01;
+  }
   snap = true;
   applyCam();
   setTimeout(() => { snap = false; }, 1200);
@@ -688,7 +739,8 @@ function closeNode(){
   if (activeId) elById[activeId]?.classList.remove('active');
   activeId = null;
   highlightWires(null);
-  cam = { rx: -8, ry: 22, scale: defaultScale(), panX: 0, panY: 0 };
+  const r = defaultRotation();
+  cam = { rx: r.rx, ry: r.ry, scale: defaultScale(), panX: 0, panY: 0 };
   snap = true; applyCam();
 }
 
@@ -720,11 +772,11 @@ stage.addEventListener('click', (e) => {
 const mm = document.getElementById('minimapSvg');
 function renderMinimap(){
   mm.innerHTML = '';
-  // map world coords (-560..660, -300..340) → 0..220, 0..86
+  // map world coords (-560..660, -340..380) → 0..220, 0..86
   NODES.forEach(n => {
     const p = nodePos(n);
     const mx = ((p.x + 700) / 1400) * 220;
-    const my = ((p.y + 360) / 720) * 86;
+    const my = ((p.y + 360) / 760) * 86;
     const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
     c.setAttribute('cx', mx); c.setAttribute('cy', my); c.setAttribute('r', n.layer === 'output' ? 3 : 2);
     c.setAttribute('class', 'mm-node'); c.dataset.id = n.id;
@@ -854,7 +906,8 @@ async function runForwardPass(){
   fpBtn.disabled = true;
   closeNode();
   // reset camera to wide view
-  cam = { rx: -8, ry: 22, scale: Math.min(defaultScale(), 0.7), panX: 0, panY: 0 };
+  const _fpr = defaultRotation();
+  cam = { rx: _fpr.rx, ry: _fpr.ry, scale: Math.min(defaultScale(), 0.7), panX: 0, panY: 0 };
   snap = true; applyCam();
   setTimeout(() => { snap = false; }, 600);
 
@@ -965,18 +1018,20 @@ renderMinimap();
 applyCam();
 window.addEventListener('resize', renderWires);
 
-/* idle camera drift */
-let t = 0;
-function idle(){
-  if (!drag && !panel.classList.contains('open') && !fpRunning) {
-    t += 0.0006;
-    cam.ry = cam.ry * 0.995 + (22 + Math.sin(t) * 6) * 0.005;
-    cam.rx = cam.rx * 0.995 + (-8 + Math.cos(t*0.7) * 3) * 0.005;
-    applyCam();
+/* idle camera drift — desktop only; mobile stays flat with no rotation */
+if (!IS_MOBILE) {
+  let t = 0;
+  function idle(){
+    if (!drag && !panel.classList.contains('open') && !fpRunning) {
+      t += 0.0006;
+      cam.ry = cam.ry * 0.995 + (22 + Math.sin(t) * 6) * 0.005;
+      cam.rx = cam.rx * 0.995 + (-8 + Math.cos(t*0.7) * 3) * 0.005;
+      applyCam();
+    }
+    requestAnimationFrame(idle);
   }
-  requestAnimationFrame(idle);
+  idle();
 }
-idle();
 </script>
 
 </body>
