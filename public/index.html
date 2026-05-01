@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <title>Ethan Kennedy — Neural Portfolio</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Ethan Kennedy — Software & AI Engineer. 5+ years across applied ML, generative audio, and full-stack systems. A 3D neural-network portfolio: input layer is what i work with, hidden layers are what i've shipped, output is just me.">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/assets/ethan-neural-180.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Ethan Kennedy — Neural Portfolio">
+<meta property="og:description" content="Software & AI Engineer. 5+ years across applied ML, generative audio, and full-stack systems.">
+<meta property="og:image" content="https://ethankennedy.uk/assets/ethan-neural-og.jpg">
+<meta property="og:url" content="https://ethankennedy.uk">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ethan Kennedy — Neural Portfolio">
+<meta name="twitter:description" content="Software & AI Engineer. 5+ years across applied ML, generative audio, and full-stack systems.">
+<meta name="twitter:image" content="https://ethankennedy.uk/assets/ethan-neural-og.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -192,6 +204,9 @@
   .panel-body .meta-row:last-of-type { border-bottom: 0; margin-bottom: 12px; }
   .panel-body .meta-row .k { color: #5b6178; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; padding-top: 2px; }
   .panel-body .meta-row .v { color: #f3f5fb; }
+  .panel-body .portrait-frame { position: relative; width: 100%; aspect-ratio: 3 / 4; max-height: 320px; margin: 0 0 14px; border: 1px solid #ff3d8a; border-radius: 2px; overflow: hidden; box-shadow: 0 0 18px rgba(255,61,138,0.25), inset 0 0 40px rgba(255,61,138,0.08); }
+  .panel-body .portrait-frame img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; filter: saturate(1.05) contrast(1.05); }
+  .panel-body .portrait-frame::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, rgba(8,9,13,0.55) 100%); pointer-events: none; }
   .panel-body .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
   .panel-body .links a { font: 500 10px 'JetBrains Mono', monospace; color: #ff3d8a; text-decoration: none; padding: 5px 10px; border: 1px solid #ff3d8a; border-radius: 2px; }
   .panel-body .links a:hover { background: rgba(255,61,138,0.1); }
@@ -465,7 +480,7 @@ const DETAIL = {
   'e-extra': { kind:'role', meta:{focus:'self-directed training & extra-curricular'}, body:`<p>extra-curriculars and self-directed training that don't fit a standard CV slot but show range:</p><ul><li>The Complete JavaScript Course 2024 — Zero to Expert</li><li>TensorFlow for Deep Learning Bootcamp (2023)</li><li>Voice Acting course with Laci Morgan (2023)</li><li>Mandarin Chinese — intermediate proficiency (2021–2023)</li><li>Scottish Space School (2020) · Mission Discovery (2018)</li></ul><p>also baked into how i work day-to-day: <span class="a">Agile</span> methodologies (academic + professional at Continuata), strong client comms, and explaining technical concepts to non-technical audiences.</p>`, tags:['JavaScript','TensorFlow','Mandarin','Voice Acting','Space School','Agile'] },
 
   // output
-  'out':    { kind:'output', meta:{role:'Software & AI Engineer', based:'Glasgow, UK', status:'Open to roles · 2026'}, body:`<p>5+ years across applied ML, generative audio, and full-stack systems. comfortable training a model and packaging it as a thing a user can press a button on.</p><p>looking for AI/ML & software engineering, full-stack, or contract work. happy to chat.</p>`, tags:['AI','full-stack','ML','open to relocate'], links:[['✉ ethan@continuata.com','mailto:ethan@continuata.com'],['↓ cv','assets/ethankennedy-cv_30-04-26.pdf'],['github','https://github.com/ejkennedy']] },
+  'out':    { kind:'output', meta:{role:'Software & AI Engineer', based:'Glasgow, UK', status:'Open to roles · 2026'}, body:`<div class="portrait-frame"><img src="assets/ethan-neural-800.jpg" alt="Ethan Kennedy — neural portrait" loading="lazy" /></div><p>5+ years across applied ML, generative audio, and full-stack systems. comfortable training a model and packaging it as a thing a user can press a button on.</p><p>looking for AI/ML & software engineering, full-stack, or contract work. happy to chat.</p>`, tags:['AI','full-stack','ML','open to relocate'], links:[['✉ ethan@continuata.com','mailto:ethan@continuata.com'],['↓ cv','assets/ethankennedy-cv_30-04-26.pdf'],['github','https://github.com/ejkennedy']] },
 };
 
 /* ════════════════════════════════════════════════════════════
