@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <title>Ethan Kennedy — Neural Portfolio</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Ethan Kennedy — Software & AI Engineer. 5+ years across applied ML, generative audio, and full-stack systems. A 3D neural-network portfolio: input layer is what i work with, hidden layers are what i've shipped, output is just me.">
+<meta name="description" content="Ethan Kennedy — Software & AI Engineer. 5+ years shipping AI-powered products and full-stack systems to production. A 3D neural-network portfolio: input layer is what i work with, hidden layers are what i've shipped, output is just me.">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/assets/ethan-neural-180.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Ethan Kennedy — Neural Portfolio">
-<meta property="og:description" content="Software & AI Engineer. 5+ years across applied ML, generative audio, and full-stack systems.">
+<meta property="og:description" content="Software & AI Engineer. 5+ years shipping AI-powered products and full-stack systems to production.">
 <meta property="og:image" content="https://ethankennedy.uk/assets/ethan-neural-og.jpg">
 <meta property="og:url" content="https://ethankennedy.uk">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Ethan Kennedy — Neural Portfolio">
-<meta name="twitter:description" content="Software & AI Engineer. 5+ years across applied ML, generative audio, and full-stack systems.">
+<meta name="twitter:description" content="Software & AI Engineer. 5+ years shipping AI-powered products and full-stack systems to production.">
 <meta name="twitter:image" content="https://ethankennedy.uk/assets/ethan-neural-og.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -283,7 +283,7 @@
 <div class="hud hud-tl">
   <span class="kicker" style="font: 400 9px 'JetBrains Mono', monospace; color: #5b6178; letter-spacing: 0.18em; text-transform: uppercase">// neural portfolio · v.2026.04</span>
   <span class="name">ethan<span class="a">.kennedy</span></span>
-  <span class="role">software · ai · ml engineer</span>
+  <span class="role">software · ai engineer</span>
   <span class="meta">glasgow, uk · BSc CS · 2026</span>
 </div>
 
@@ -292,7 +292,7 @@
   <div class="hud-row">
     <a class="hud-link" href="mailto:ethan@continuata.com">✉ mail</a>
     <a class="hud-link" href="https://github.com/ejkennedy" target="_blank" rel="noopener">↗ github</a>
-    <a class="hud-link" href="assets/ethankennedy-cv_30-04-26.pdf">↓ cv</a>
+    <a class="hud-link" href="assets/ethankennedy-cv.pdf">↓ cv</a>
   </div>
   <button class="fp-btn" id="fpBtn">▶ run forward pass</button>
   <button class="hud-link" id="resetView" style="cursor:pointer;background:rgba(22,26,36,0.85)">⟲ reset view</button>
@@ -355,7 +355,7 @@
   <div class="welcome-card">
     <span class="kicker">welcome.exe loaded</span>
     <h1 class="h">forward-pass through<br>my <span class="a">network<span style="animation:blink 1s steps(2) infinite">_</span></span></h1>
-    <p class="sub">5+ years across applied ML, LLM systems, and generative audio.</p>
+    <p class="sub">5+ years shipping AI-powered products and full-stack systems to production.</p>
     <p class="body" id="welcomeBody">this isn't a normal portfolio. it's a 3D <span class="a">neural network</span> — the input layer is what i work with, the hidden layers are what i've actually shipped, and the output is just me. orbit it freely in 3D, click any node to inspect. the score playing throughout is "psycho princess" — i wrote, played and recorded it.</p>
     <div class="keys" id="welcomeKeys">
       <div class="row"><span>orbit network</span><kbd>drag</kbd></div>
@@ -1011,16 +1011,13 @@ document.addEventListener('pointerdown', (e) => {
 const welcome = document.getElementById('welcome');
 document.getElementById('enterBtn').addEventListener('click', () => {
   welcome.classList.add('gone');
-  audio.play().then(()=>{ playBtn.textContent='❚❚'; }).catch(()=>{});
 });
 document.getElementById('tourBtn').addEventListener('click', () => {
   welcome.classList.add('gone');
-  audio.play().then(()=>{ playBtn.textContent='❚❚'; }).catch(()=>{});
   setTimeout(startTour, 800);
 });
 document.getElementById('fpStartBtn').addEventListener('click', () => {
   welcome.classList.add('gone');
-  audio.play().then(()=>{ playBtn.textContent='❚❚'; }).catch(()=>{});
   setTimeout(runForwardPass, 700);
 });
 

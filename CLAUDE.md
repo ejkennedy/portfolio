@@ -15,7 +15,7 @@ Personal portfolio site for Ethan Kennedy, deployed as a static-asset Cloudflare
 
 - **`public/`** is the deploy root. Everything under it is served as-is via Cloudflare's static-assets path.
   - `public/index.html` — the entire site (62 KB), all styles + JS inline.
-  - `public/assets/` — SVGs (mark, wordmark, waveform), music (`assets/music/*.mp3`), CV PDF (`assets/ethankennedy-cv_30-04-26.pdf`).
+  - `public/assets/` — SVGs (mark, wordmark, waveform), music (`assets/music/*.mp3`), CV PDF (`assets/ethankennedy-cv.pdf`) — generic name, replace the file to update CV without touching HTML.
   - `public/fonts/` — local font assets (currently just a README; the page loads JetBrains Mono from Google Fonts).
   - `public/colors_and_type.css` — design-system reference, not currently linked from `index.html`.
 - **`wrangler.toml`** — assets-only Worker config (`[assets] directory = "./public"`), pinned `account_id`, custom-domain routes for `ethankennedy.uk` and `www.ethankennedy.uk`. No `main` / no Worker code.
